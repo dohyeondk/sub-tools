@@ -1,0 +1,14 @@
+[project]
+name = "sub-tools"
+version = "0.1.0"
+description = "Download HLS video, convert to audio, transcribe and translate using Gemini API."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+sub-tools = "sub_tools:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
