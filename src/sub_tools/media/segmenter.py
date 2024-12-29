@@ -56,7 +56,6 @@ def __ranges_split_by_natural_pauses(
     current_start = 0
 
     while True:
-        print("hello")
         # If remaining audio is less than the desired segment length, we're done
         if (total_length_ms - current_start) <= segment_length_ms:
             split_ranges.append((current_start, total_length_ms))
@@ -109,7 +108,6 @@ def __find_split_point(
     # Step down from the desired silence length until we find a match or give up
     current_silence_length = min_silence_length
     while current_silence_length > 0:
-        print("hi")
         silent_ranges = silence.detect_silence(
             segment_to_search,
             min_silence_len=current_silence_length,
