@@ -58,7 +58,7 @@ def build_parser():
         "--languages",
         "-l",
         nargs="+", # allows multiple values, e.g. --languages en es fr
-        default=["en", "zh"],
+        default=["en", "es", "ko", "zh"],
         help="List of language codes, e.g. --languages en es fr (default: %(default)s)."
     )
 
