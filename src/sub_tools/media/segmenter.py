@@ -1,3 +1,5 @@
+import os.path
+
 from pydub import AudioSegment, silence
 
 
@@ -14,7 +16,11 @@ def segment_audio(
     :param audio_segment_format: Audio format for exported segments (default: 'mp3')
     :param audio_segment_prefix: File prefix for each exported segment (default: 'audio_segment')
     """
-    segment_ranges = ranges_split_by_natural_pauses(audio_file=audio_file)
+    if os.path.exists(f"{audio_segment_prefix}_0.{audio_segment_format}"):
+        print("Segmented audio files already exist. Skipping segmentation...")
+        return
+
+    segment_ranges = __ranges_split_by_natural_pauses(audio_file=audio_file)
     audio = AudioSegment.from_file(audio_file)
 
     for segment_range in segment_ranges:
@@ -24,7 +30,7 @@ def segment_audio(
         partial_audio.export(audio_segment_filename, format=audio_segment_format)
 
 
-def ranges_split_by_natural_pauses(
+def __ranges_split_by_natural_pauses(
     audio_file,
     segment_length_ms=600_000,  # 10 minutes
     search_before_ms=60_000,    # 1 minute
@@ -61,7 +67,7 @@ def ranges_split_by_natural_pauses(
         search_end = min(total_length_ms, intended_end)
 
         # Attempt to find a pause in that search window
-        pause_ms = find_split_point(audio, search_start, search_end)
+        pause_ms = __find_split_point(audio, search_start, search_end)
 
         if pause_ms is not None:
             # Found a pause in the search window
@@ -75,7 +81,7 @@ def ranges_split_by_natural_pauses(
     return split_ranges
 
 
-def find_split_point(
+def __find_split_point(
     audio_segment,
     start_ms,
     end_ms,

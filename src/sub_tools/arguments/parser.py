@@ -1,5 +1,7 @@
 import argparse
 
+from .env_default import EnvDefault
+
 
 def build_parser():
     parser = argparse.ArgumentParser(prog='sub-tools', description=None)
@@ -15,21 +17,27 @@ def build_parser():
         "--output-path",
         "-o",
         default="output",
-        help="Output path for downloaded files and generated subtitles."
+        help="Output path for downloaded files and generated subtitles (default: %(default)s)."
     )
 
     parser.add_argument(
         "--video-file",
         "-v",
         default="video.mp4",
-        help="Path to the video file (e.g., video.mp4)."
+        help="Path to the video file (default: %(default)s)."
     )
 
     parser.add_argument(
         "--audio-file",
         "-a",
         default="audio.mp3",
-        help="Path to the audio file (e.g., audio.mp3)."
+        help="Path to the audio file (default: %(default)s)."
+    )
+
+    parser.add_argument(
+        "--shazam-signature-file",
+        default="message.shazamsignature",
+        help="Path to the Shazam signature file."
     )
 
     parser.add_argument(
@@ -37,6 +45,40 @@ def build_parser():
         "-y",
         action="store_true",
         help="If given, overwrite the output file if it already exists."
+    )
+
+    parser.add_argument(
+        "--gemini-api-key",
+        action=EnvDefault,
+        env_name="GEMINI_API_KEY",
+        help="Gemini API Key. If not provided, the script tries to use the GEMINI_API_KEY environment variable."
+    )
+
+    parser.add_argument(
+        "--languages",
+        "-l",
+        nargs="+", # allows multiple values, e.g. --languages en es fr
+        default=["en", "zh"],
+        help="List of language codes, e.g. --languages en es fr (default: %(default)s)."
+    )
+
+    parser.add_argument(
+        "--audio-segment-prefix",
+        default="audio_segment",
+        help="Prefix for audio segments (default: %(default)s)."
+    )
+
+    parser.add_argument(
+        "--audio-segment-format",
+        default="mp3",
+        help="Format for audio segments (default: %(default)s)."
+    )
+
+    parser.add_argument(
+        "--retry",
+        type=int,
+        default=50,
+        help="Number of times to retry the tasks (default: %(default)s)."
     )
 
     def print_help() -> None:
