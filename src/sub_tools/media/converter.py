@@ -39,5 +39,5 @@ def media_to_signature(media_file, signature_file, overwrite=False):
     subprocess.run([
         "shazam", "signature",
         "--input", media_file,
-        "output", signature_file,
+        "--output", signature_file,
     ], check=True)
