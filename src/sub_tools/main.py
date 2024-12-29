@@ -1,6 +1,6 @@
 from .arguments.parser import build_parser, parse_args
 from .media.converter import hls_to_video, video_to_audio
-from .os.directory import change_directory
+from .system.directory import change_directory
 
 
 def main():
