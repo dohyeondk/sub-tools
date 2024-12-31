@@ -11,3 +11,10 @@ wheels/
 
 .idea/
 output/
+
+.DS_Store
+*.srt
+*.log
+*.mp3
+*.mp4
+*.shazamsignature
