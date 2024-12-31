@@ -1,4 +1,3 @@
-import re
 import pysrt
 
 
@@ -61,38 +60,3 @@ def validate_subtitles(content, duration):
             return False
 
     return True
-
-
-def fix_subtitles(content):
-    """
-    Fix timestamps within an SRT-formatted string that are missing the hour part.
-
-    Each timestamp should have the format: HH:MM:SS,mmm. If a line
-    is found with only MM:SS,mmm (missing hours), this function will
-    prepend "00:" to make it valid. For example: `"02:27,170 --> 02:28,430"`
-    becomes `"00:02:27,170 --> 00:02:28,430"`.
-
-    Parameters:
-        content (str): A string containing subtitles (possibly invalid) in SRT format.
-
-    Returns:
-        str: A string with corrected subtitle timestamps.
-    """
-    lines = [__fix_subtitle_line(line) for line in content.splitlines()]
-    return "\n".join(lines)
-
-def __fix_subtitle_line(line):
-    pattern = r'^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$'
-    match = re.match(pattern, line.strip())
-    if match:
-        left_timestamp, right_timestamp = match.groups()
-        fixed_left = __fix_subtitle_timestamp(left_timestamp)
-        fixed_right = __fix_subtitle_timestamp(right_timestamp)
-        return f"{fixed_left} --> {fixed_right}"
-    else:
-        return line
-
-def __fix_subtitle_timestamp(timestamp):
-    if timestamp.count(':') == 1:
-        timestamp = "00:" + timestamp
-    return timestamp
