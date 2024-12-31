@@ -1,3 +1,5 @@
+import signal
+
 from .arguments.parser import build_parser, parse_args
 from .media.converter import hls_to_media, media_to_signature
 from .media.segmenter import segment_audio
@@ -7,6 +9,9 @@ from .transcribe import transcribe
 
 
 def main():
+    signal.signal(signal.SIGINT, _signal_handler)
+    signal.signal(signal.SIGTERM, _signal_handler)
+
     try:
         parser = build_parser()
         parsed = parse_args(parser)
@@ -24,3 +29,8 @@ def main():
 
     except Exception as e:
         print(f"Error: {str(e)}")
+
+
+def _signal_handler(signum, frame):
+    print("\nBye!")
+    exit(0)
