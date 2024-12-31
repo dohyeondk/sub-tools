@@ -7,8 +7,8 @@ def change_directory(directory):
     os.chdir(directory)
 
 
-def paths_with_offsets(prefix, format):
-    pattern = fr"{prefix}_(\d+)\.{format}"
+def paths_with_offsets(prefix, file_format):
+    pattern = fr"{prefix}_(\d+)\.{file_format}"
     return [
         (audio_segment_path, match.group(1))
         for audio_segment_path in sorted(os.listdir("."))
