@@ -2,26 +2,33 @@ import os
 import subprocess
 
 
-def hls_to_video(
+def hls_to_media(
     hls_url: str,
-    video_file: str,
+    output_file: str,
+    audio_only: bool = False,
     overwrite: bool = False,
 ) -> None:
     """
-    Downloads a video from an HLS URL and saves it to a file.
+    Downloads media from an HLS URL and saves it as video or audio.
+    
+    Args:
+        hls_url: HLS stream URL
+        output_file: Path to save the output file
+        audio_only: If True, download audio only
+        overwrite: If True, overwrite existing file
     """
-    if os.path.exists(video_file) and not overwrite:
-        print(f"Video file {video_file} already exists. Skipping conversion...")
+    if os.path.exists(output_file) and not overwrite:
+        print(f"File {output_file} already exists. Skipping download...")
         return
 
-    print(f"Downloading video from {hls_url}...")
+    print(f"Downloading {'audio' if audio_only else 'video'} from {hls_url}...")
 
-    # Download video from the HLS URL
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-i", hls_url,
-        video_file
-    ], check=True, capture_output=True)
+    cmd = ["ffmpeg", "-y", "-i", hls_url]
+    if audio_only:
+        cmd.extend(["-vn", "-c:a", "libmp3lame"])
+    cmd.append(output_file)
+
+    subprocess.run(cmd, check=True, capture_output=True)
 
 
 def video_to_audio(
