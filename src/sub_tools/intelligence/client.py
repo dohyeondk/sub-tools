@@ -478,5 +478,5 @@ def __remove_unneeded_characters(text: str) -> str:
     return text.strip().strip("```").strip("srt")
 
 def __fix_invalid_timestamp(text: str) -> str:
-    pattern = re.compile(r"(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})")
+    pattern = re.compile(r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE)
     return pattern.sub(r'00:\1 --> 00:\2', text)
