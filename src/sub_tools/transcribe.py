@@ -3,7 +3,7 @@ import asyncio
 from .intelligence.client import audio_to_subtitles, upload_file, delete_file
 from .media.info import get_duration
 from .subtitles.serializer import serialize_subtitles
-from .subtitles.validator import validate_subtitles
+from .subtitles.validator import validate_subtitles, SubtitleValidationError
 from .system.directory import paths_with_offsets
 from .system.language import get_language_name
 from .system.logger import write_log
@@ -47,14 +47,17 @@ async def __transcribe_item(audio_segment_path, audio_segment_format, offset, la
 
         for i in range(0, retry):
             print(f"Transcribe the audio at {offset} to {language}.")
+
             with measure():
                 subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
-            if validate_subtitles(subtitles, duration_ms):
+
+            try:
+                validate_subtitles(subtitles, duration_ms)
                 write_log("Valid", language, offset, subtitles)
                 serialize_subtitles(subtitles, language_code, int(offset))
                 break
-            else:
-                write_log("Invalid", language, offset, subtitles)
+            except SubtitleValidationError as e:
+                write_log("Invalid", e, language, offset, subtitles)
                 await asyncio.sleep(1 + i)
 
         await delete_file(api_key, file)

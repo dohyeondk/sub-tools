@@ -1,6 +1,13 @@
 import pysrt
 
 
+class SubtitleValidationError(Exception):
+    """
+    Custom exception to indicate that a subtitle validation error has occurred.
+    """
+    pass
+
+
 def validate_subtitles(content, duration):
     """
     Validate a string of subtitles to ensure they meet the following criteria:
@@ -26,37 +33,42 @@ def validate_subtitles(content, duration):
     # Parse the subtitles string into a list of subtitle items.
     try:
         subs = pysrt.from_string(content)
-    except AttributeError:
-        print("Error: Invalid subtitles detected (cannot parse subtitles).")
-        return False
+    except AttributeError as e:
+        raise SubtitleValidationError(
+            "Invalid subtitles detected (cannot parse subtitles)."
+        ) from e
 
     # Check if there is more than one subtitle item.
     if len(subs) <= 1:
-        print("Error: Not enough subtitles to validate.")
-        return False
+        raise SubtitleValidationError("Not enough subtitles to validate.")
 
     # Validate that no subtitle item exceeds the maximum allowed duration.
     for item in subs:
         if item.duration.ordinal > max_valid_duration:
-            print(f"Error: A subtitle item ({item.start} --> {item.end}) exceeds the maximum allowed duration.")
-            return False
+            raise SubtitleValidationError(
+                f"A subtitle item ({item.start} --> {item.end}) exceeds "
+                f"the maximum allowed duration of {max_valid_duration} ms."
+            )
 
     # Ensure the first subtitle does not start too late.
     begin_gap = abs(subs[0].start.ordinal)
     if begin_gap > begin_gap_threshold:
-        print(f"Error: Too much gap in the beginning ({begin_gap} ms).")
-        return False
+        raise SubtitleValidationError(
+            f"Too much gap at the beginning ({begin_gap} ms), "
+            f"exceeds threshold of {begin_gap_threshold} ms."
+        )
 
     # Ensure the last subtitle does not end too far from the provided duration.
     end_gap = abs(subs[-1].end.ordinal - duration)
     if end_gap > end_gap_threshold:
-        print(f"Error: Too much gap at the end ({end_gap} ms).")
-        return False
+        raise SubtitleValidationError(
+            f"Too much gap at the end ({end_gap} ms), "
+            f"exceeds threshold of {end_gap_threshold} ms."
+        )
 
     # Validate that the start time is never greater than the end time in any subtitle.
     for item in subs:
         if item.start > item.end:
-            print(f"Error: Start time ({item.start}) is greater than end time ({item.end}).")
-            return False
-
-    return True
+            raise SubtitleValidationError(
+                f"Start time ({item.start}) is greater than end time ({item.end})."
+            )
