@@ -18,6 +18,7 @@ def validate_subtitles(content, duration):
     4. The first subtitle does not start too late.
     5. The last subtitle does not end too far from the provided duration.
     6. For each subtitle item, the start time is not greater than the end time.
+    7. There is no gap between consecutive subtitles that exceeds the provided duration.
 
     Parameters:
         content (str): The subtitles as a string in SRT format.
@@ -29,6 +30,7 @@ def validate_subtitles(content, duration):
     max_valid_duration = 20_000    # Maximum allowed duration for any single subtitle (ms)
     begin_gap_threshold = 5_000    # Maximum allowed gap at the beginning (ms)
     end_gap_threshold = 20_000     # Maximum allowed gap at the end (ms)
+    inter_item_gap_threshold = 20_000  # Maximum allowed gap between consecutive subtitles (ms)
 
     # Parse the subtitles string into a list of subtitle items.
     try:
@@ -71,4 +73,14 @@ def validate_subtitles(content, duration):
         if item.start > item.end:
             raise SubtitleValidationError(
                 f"Start time ({item.start}) is greater than end time ({item.end})."
+            )
+
+    # Ensure there is no gap larger than the threshold between consecutive subtitles.
+    for i in range(len(subs) - 1):
+        gap = subs[i+1].start.ordinal - subs[i].end.ordinal
+        if gap > inter_item_gap_threshold:
+            raise SubtitleValidationError(
+                f"The gap of {gap} ms between subtitle #{i+1} "
+                f"({subs[i].end}) and subtitle #{i+2} ({subs[i+1].start}) "
+                f"exceeds the maximum allowed gap of {inter_item_gap_threshold} ms."
             )
