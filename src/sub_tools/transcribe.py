@@ -38,26 +38,39 @@ async def __transcribe(parsed):
     await asyncio.gather(*tasks)
 
 
-async def __transcribe_item(audio_segment_path, audio_segment_format, offset, language_code, api_key, retry):
+async def __transcribe_item(
+    audio_segment_path: str,
+    audio_segment_format: str,
+    offset: int,
+    language_code: str,
+    api_key: str,
+    retry: int
+) -> None:
     async with semaphore:
         language = get_language_name(language_code)
+        file = None
 
-        file = await upload_file(api_key, audio_segment_path)
-        duration_ms = get_duration(audio_segment_path) * 1000
+        try:
+            file = await upload_file(api_key, audio_segment_path)
+            duration_ms = get_duration(audio_segment_path) * 1000
 
-        for i in range(0, retry):
-            print(f"Transcribe the audio at {offset} to {language}.")
+            for attempt in range(retry):
+                print(f"Transcribe attempt {attempt + 1}/{retry} for audio at {offset} to {language}")
 
-            with measure():
-                subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
+                try:
+                    with measure():
+                        subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
+                    validate_subtitles(subtitles, duration_ms)                    
+                    write_log("Valid", language, offset, subtitles)
+                    serialize_subtitles(subtitles, language_code, int(offset))
+                    break
 
-            try:
-                validate_subtitles(subtitles, duration_ms)
-                write_log("Valid", language, offset, subtitles)
-                serialize_subtitles(subtitles, language_code, int(offset))
-                break
-            except SubtitleValidationError as e:
-                write_log("Invalid", e, language, offset, subtitles)
-                await asyncio.sleep(1 + i)
+                except (SubtitleValidationError, Exception) as e:
+                    write_log("Invalid", e, language, offset, subtitles)
+                    await asyncio.sleep(min(2 ** attempt, 60))
 
-        await delete_file(api_key, file)
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+
+        finally:
+            await delete_file(api_key, file)
