@@ -37,7 +37,7 @@ def build_parser():
     parser.add_argument(
         "--shazam-signature-file",
         default="message.shazamsignature",
-        help="Path to the Shazam signature file."
+        help="Path to the Shazam signature file (default: %(default)s)."
     )
 
     parser.add_argument(
@@ -72,6 +72,13 @@ def build_parser():
         "--audio-segment-format",
         default="mp3",
         help="Format for audio segments (default: %(default)s)."
+    )
+
+    parser.add_argument(
+        "--audio-segment-length",
+        type=int,
+        default=600_000,
+        help="Length of each audio segment, in milliseconds (default: %(default)s)."
     )
 
     parser.add_argument(

@@ -5,8 +5,9 @@ from pydub import AudioSegment, silence
 
 def segment_audio(
     audio_file,
-    audio_segment_format='mp3',
-    audio_segment_prefix='audio_segment',
+    audio_segment_prefix,
+    audio_segment_format,
+    audio_segment_length,
 ):
     """
     Segments an audio file by first determining split points from natural pauses,
@@ -15,12 +16,13 @@ def segment_audio(
     :param audio_file: Path to the source audio file
     :param audio_segment_format: Audio format for exported segments (default: 'mp3')
     :param audio_segment_prefix: File prefix for each exported segment (default: 'audio_segment')
+    :param audio_segment_length: Desired maximum segment length in ms.
     """
     if os.path.exists(f"{audio_segment_prefix}_0.{audio_segment_format}"):
         print("Segmented audio files already exist. Skipping segmentation...")
         return
 
-    segment_ranges = __ranges_split_by_natural_pauses(audio_file=audio_file)
+    segment_ranges = __ranges_split_by_natural_pauses(audio_file, audio_segment_length)
     audio = AudioSegment.from_file(audio_file)
 
     for segment_range in segment_ranges:
@@ -30,11 +32,7 @@ def segment_audio(
         partial_audio.export(audio_segment_filename, format=audio_segment_format)
 
 
-def __ranges_split_by_natural_pauses(
-    audio_file,
-    segment_length_ms=600_000,  # 10 minutes
-    search_before_ms=60_000,    # 1 minute
-):
+def __ranges_split_by_natural_pauses(audio_file, audio_segment_length):
     """
     Splits an audio file into segments close to `segment_length_ms`,
     but tries to avoid cutting through speech by looking for natural pauses.
@@ -45,8 +43,7 @@ def __ranges_split_by_natural_pauses(
     3. Repeats until the entire file is processed.
 
     :param audio_file: Path to the source audio file
-    :param segment_length_ms: Desired maximum segment length in ms (default 10 minutes)
-    :param search_before_ms: How far before the exact segment length to start looking for silence (default 1 minute)
+    :param audio_segment_length: Desired maximum segment length in ms.
     :return: List of (start_ms, end_ms) tuples for each segment
     """
     audio = AudioSegment.from_file(audio_file, format="mp3")
@@ -57,12 +54,12 @@ def __ranges_split_by_natural_pauses(
 
     while True:
         # If remaining audio is less than the desired segment length, we're done
-        if (total_length_ms - current_start) <= segment_length_ms:
+        if (total_length_ms - current_start) <= audio_segment_length:
             split_ranges.append((current_start, total_length_ms))
             break
 
-        intended_end = current_start + segment_length_ms
-        search_start = max(current_start, intended_end - search_before_ms)
+        intended_end = current_start + audio_segment_length
+        search_start = max(current_start, intended_end - audio_segment_length // 10)
         search_end = min(total_length_ms, intended_end)
 
         # Attempt to find a pause in that search window
