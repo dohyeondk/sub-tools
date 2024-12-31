@@ -7,6 +7,7 @@ def combine_subtitles(language_codes: list[str]) -> None:
     """
     Combines subtitles for a list of languages.
     """
+    print("Combining subtitles...")
     for language_code in language_codes:
         combine_subtitles_for_language(language_code)
 

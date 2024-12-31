@@ -14,6 +14,7 @@ semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
 
 def transcribe(parsed) -> None:
+    print("Transcribing...")
     asyncio.run(__transcribe(parsed))
 
 

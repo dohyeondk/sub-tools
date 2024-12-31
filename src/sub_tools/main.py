@@ -18,6 +18,7 @@ def main():
             segment_audio(parsed.audio_file, parsed.audio_segment_prefix, parsed.audio_segment_format, parsed.audio_segment_length)
             transcribe(parsed)
             combine_subtitles(parsed.languages)
+            print("Done!")
         else:
             parsed.func()
 
