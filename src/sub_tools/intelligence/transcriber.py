@@ -1,5 +1,6 @@
 from google import genai
 from google.genai import types
+from google.genai.errors import ClientError
 from ..system.logger import write_log
 
 
@@ -10,7 +11,7 @@ async def audio_to_subtitles(audio_path, audio_format, language, api_key):
     file = await client.aio.files.upload(path=audio_path)
 
     # Run prompt
-    result = await __run_prompt([types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"), language])
+    result = await __run_prompt(client, [types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"), language])
     write_log(audio_path, result)
 
     # Delete file
@@ -62,13 +63,15 @@ async def __run_prompt(client, contents):
     a subtitle - 2nd subtitle.
     """
 
-    response = await client.aio.models.generate_content(
-        model='gemini-2.0-flash-thinking-exp-1219',
-        contents=contents,
-        config=types.GenerateContentConfig(
-            system_instruction=[system_instruction],
-            candidate_count=1,
-        ),
-    )
-
-    return response.candidates[0].content.parts[1].text
+    try:
+        response = await client.aio.models.generate_content(
+            model='gemini-2.0-flash-thinking-exp-1219',
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=[system_instruction],
+                candidate_count=1,
+            ),
+        )
+        return response.candidates[0].content.parts[1].text
+    except ClientError:
+        return None

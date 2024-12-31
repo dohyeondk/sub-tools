@@ -22,7 +22,11 @@ def validate_subtitles(content, offset, audio_segment_prefix, audio_segment_form
     end_diff_threshold = 20_000
 
     # Parse the subtitles string into a list of subtitle items.
-    subs = pysrt.from_string(content)
+    try:
+        subs = pysrt.from_string(content)
+    except AttributeError:
+        print("Error: Invalid subtitles detected.")
+        return False
 
     # Check if there are no subtitle items.
     if len(subs) <= 1:
