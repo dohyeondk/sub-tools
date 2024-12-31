@@ -15,16 +15,16 @@ semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
 def transcribe(parsed) -> None:
     print("Transcribing...")
-    asyncio.run(__transcribe(parsed))
+    asyncio.run(_transcribe(parsed))
 
 
-async def __transcribe(parsed) -> None:
+async def _transcribe(parsed) -> None:
     tasks = []
 
     for path, offset in paths_with_offsets(parsed.audio_segment_prefix, parsed.audio_segment_format):
         for language_code in parsed.languages:
             task = asyncio.create_task(
-                __transcribe_item(
+                _transcribe_item(
                     path,
                     parsed.audio_segment_format,
                     offset,
@@ -39,7 +39,7 @@ async def __transcribe(parsed) -> None:
     await asyncio.gather(*tasks)
 
 
-async def __transcribe_item(
+async def _transcribe_item(
     audio_segment_path: str,
     audio_segment_format: str,
     offset: int,

@@ -40,7 +40,7 @@ def segment_audio(
     
     audio = AudioSegment.from_file(audio_file, format="mp3")
 
-    segment_ranges = __get_segment_ranges(audio, audio_segment_length, config)
+    segment_ranges = _get_segment_ranges(audio, audio_segment_length, config)
     audio = AudioSegment.from_file(audio_file)
 
     for start_ms, end_ms in segment_ranges:
@@ -49,7 +49,7 @@ def segment_audio(
         partial_audio.export(output_file, format=audio_segment_format)
 
 
-def __get_segment_ranges(
+def _get_segment_ranges(
     audio: AudioSegment,
     segment_length: int,
     config: SegmentConfig,
@@ -71,7 +71,7 @@ def __get_segment_ranges(
         search_start = max(current_start, intended_end - int(segment_length * config.search_window_ratio))
         search_end = min(total_length, intended_end)
 
-        split_point = __find_split_point(audio, search_start, search_end, config)
+        split_point = _find_split_point(audio, search_start, search_end, config)
 
         if split_point:
             ranges.append((current_start, split_point))
@@ -83,7 +83,7 @@ def __get_segment_ranges(
     return ranges
 
 
-def __find_split_point(
+def _find_split_point(
     audio: AudioSegment,
     start_ms: int,
     end_ms: int,

@@ -480,8 +480,8 @@ async def audio_to_subtitles(
             ),
         )
         text = response.candidates[0].content.parts[-1].text
-        text = __remove_unneeded_characters(text)
-        text = __fix_invalid_timestamp(text)
+        text = _remove_unneeded_characters(text)
+        text = _fix_invalid_timestamp(text)
         return text
 
     except (ClientError, ServerError) as e:
@@ -489,10 +489,10 @@ async def audio_to_subtitles(
         return None
 
 
-def __remove_unneeded_characters(text: str) -> str:
+def _remove_unneeded_characters(text: str) -> str:
     return text.strip().strip("```").strip("srt")
 
 
-def __fix_invalid_timestamp(text: str) -> str:
+def _fix_invalid_timestamp(text: str) -> str:
     pattern = re.compile(r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE)
     return pattern.sub(r'00:\1 --> 00:\2', text)
