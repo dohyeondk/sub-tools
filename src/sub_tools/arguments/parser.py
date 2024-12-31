@@ -77,7 +77,7 @@ def build_parser():
     parser.add_argument(
         "--audio-segment-length",
         type=int,
-        default=600_000,
+        default=300_000,
         help="Length of each audio segment, in milliseconds (default: %(default)s)."
     )
 
