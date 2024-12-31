@@ -22,7 +22,7 @@ async def __transcribe(parsed):
     for path, offset in paths_with_offsets(parsed.audio_segment_prefix, parsed.audio_segment_format):
         for language_code in parsed.languages:
             task = asyncio.create_task(
-                transcribe(
+                __transcribe_item(
                     path,
                     parsed.audio_segment_prefix,
                     parsed.audio_segment_format,
@@ -37,7 +37,7 @@ async def __transcribe(parsed):
     await asyncio.gather(*tasks)
 
 
-async def transcribe(audio_segment_path, audio_segment_prefix, audio_segment_format, offset, language_code, api_key, retry):
+async def __transcribe_item(audio_segment_path, audio_segment_prefix, audio_segment_format, offset, language_code, api_key, retry):
     async with semaphore:
         language = get_language_name(language_code)
 
