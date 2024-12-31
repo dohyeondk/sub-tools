@@ -1,8 +1,7 @@
 import pysrt
-from pydub import AudioSegment
 
 
-def validate_subtitles(content, offset, audio_segment_prefix, audio_segment_format):
+def validate_subtitles(content, duration):
     """
     Validates a string of subtitles to ensure they meet the following criteria:
     1. The subtitles can be successfully parsed into a list of items.
@@ -10,9 +9,7 @@ def validate_subtitles(content, offset, audio_segment_prefix, audio_segment_form
 
     Parameters:
         content (str): The subtitles as a string in SRT format.
-        offset (int): The offset of the subtitle to validate.
-        audio_segment_prefix (str): The prefix of the audio segment.
-        audio_segment_format (str): The format of the audio segment.
+        duration (int): The duration in ms of the audio segment.
 
     Returns:
         bool: True if the subtitles are valid, False otherwise.
@@ -40,12 +37,11 @@ def validate_subtitles(content, offset, audio_segment_prefix, audio_segment_form
             return False
 
     # Validate if the subtitle has enough duration
-    audio = AudioSegment.from_file(f"{audio_segment_prefix}_{offset}.{audio_segment_format}")
     diff = abs(subs[0].start.ordinal - 0)
     if diff > start_diff_threshold:
         print(f"Error: Too much gap in the beginning ({diff}).")
         return False
-    diff = abs(subs[-1].end.ordinal - audio.duration_seconds * 1000)
+    diff = abs(subs[-1].end.ordinal - duration)
     if diff > end_diff_threshold:
         print(f"Error: Too much gap in the end ({diff}).")
         return False

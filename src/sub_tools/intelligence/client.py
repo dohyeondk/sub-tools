@@ -1,26 +1,21 @@
 from google import genai
 from google.genai import types
 from google.genai.errors import ClientError
-from ..system.logger import write_log
 
 
-async def audio_to_subtitles(audio_path, audio_format, language, api_key):
+async def upload_file(api_key, path):
     client = genai.Client(api_key=api_key)
+    return await client.aio.files.upload(path=path)
 
-    # Upload file
-    file = await client.aio.files.upload(path=audio_path)
 
-    # Run prompt
-    result = await __run_prompt(client, [types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"), language])
-    write_log(audio_path, result)
-
-    # Delete file
+async def delete_file(api_key, file):
+    client = genai.Client(api_key=api_key)
     await client.aio.files.delete(name=file.name)
 
-    return result
 
+async def audio_to_subtitles(api_key, file, audio_format, language):
+    client = genai.Client(api_key=api_key)
 
-async def __run_prompt(client, contents):
     system_instruction = """
     You're a professional transcriber and translator. 
     You take an audio file and the target language. 
@@ -66,7 +61,10 @@ async def __run_prompt(client, contents):
     try:
         response = await client.aio.models.generate_content(
             model='gemini-2.0-flash-thinking-exp-1219',
-            contents=contents,
+            contents=[
+                types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"),
+                language,
+            ],
             config=types.GenerateContentConfig(
                 system_instruction=[system_instruction],
                 candidate_count=1,
