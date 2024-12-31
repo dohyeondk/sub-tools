@@ -7,7 +7,6 @@ from .subtitles.validator import validate_subtitles, SubtitleValidationError
 from .system.directory import paths_with_offsets
 from .system.language import get_language_name
 from .system.logger import write_log
-from .system.measure import measure
 
 
 max_concurrent_tasks = 4
@@ -58,8 +57,7 @@ async def __transcribe_item(
                 print(f"Transcribe attempt {attempt + 1}/{retry} for audio at {offset} to {language}")
 
                 try:
-                    with measure():
-                        subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
+                    subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
                     validate_subtitles(subtitles, duration_ms)                    
                     write_log("Valid", language, offset, subtitles)
                     serialize_subtitles(subtitles, language_code, int(offset))
