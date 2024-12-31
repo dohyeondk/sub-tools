@@ -14,11 +14,11 @@ max_concurrent_tasks = 4
 semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
 
-def transcribe(parsed):
+def transcribe(parsed) -> None:
     asyncio.run(__transcribe(parsed))
 
 
-async def __transcribe(parsed):
+async def __transcribe(parsed) -> None:
     tasks = []
 
     for path, offset in paths_with_offsets(parsed.audio_segment_prefix, parsed.audio_segment_format):

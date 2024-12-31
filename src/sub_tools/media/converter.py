@@ -2,13 +2,14 @@ import os
 import subprocess
 
 
-def hls_to_video(hls_url, video_file, overwrite=False):
+def hls_to_video(
+    hls_url: str,
+    video_file: str,
+    overwrite: bool = False,
+) -> None:
     """
     Downloads a video from an HLS URL and saves it to a file.
     """
-    if not hls_url.startswith("http"):
-        raise ValueError("Invalid HLS URL")
-
     if os.path.exists(video_file) and not overwrite:
         print(f"Video file {video_file} already exists. Skipping conversion...")
         return
@@ -23,7 +24,11 @@ def hls_to_video(hls_url, video_file, overwrite=False):
     ], check=True, capture_output=True)
 
 
-def video_to_audio(video_file, audio_file, overwrite=False):
+def video_to_audio(
+    video_file: str,
+    audio_file: str,
+    overwrite: bool = False,
+) -> None:
     """
     Converts a video file to an audio file using ffmpeg.
     """
@@ -42,7 +47,11 @@ def video_to_audio(video_file, audio_file, overwrite=False):
     ], check=True, capture_output=True)
 
 
-def media_to_signature(media_file, signature_file, overwrite=False):
+def media_to_signature(
+    media_file: str,
+    signature_file: str,
+    overwrite: bool = False,
+) -> None:
     """
     Generates a signature for the media file using the shazam CLI.
     """

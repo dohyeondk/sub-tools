@@ -1,9 +1,10 @@
 import argparse
 
+from argparse import ArgumentParser, Namespace
 from .env_default import EnvDefault
 
 
-def build_parser():
+def build_parser() -> ArgumentParser:
     parser = argparse.ArgumentParser(prog='sub-tools', description=None)
 
     parser.add_argument(
@@ -95,6 +96,6 @@ def build_parser():
     return parser
 
 
-def parse_args(parser):
+def parse_args(parser: ArgumentParser) -> Namespace:
     parsed = parser.parse_args()
     return parsed

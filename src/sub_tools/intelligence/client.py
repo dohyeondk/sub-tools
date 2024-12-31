@@ -5,17 +5,31 @@ from google.genai import types
 from google.genai.errors import ClientError, ServerError
 
 
-async def upload_file(api_key, path):
+async def upload_file(api_key: str, path: str) -> types.File:
+    """
+    Uploads a file to the Google GenAI API.
+    """
     client = genai.Client(api_key=api_key)
     return await client.aio.files.upload(path=path)
 
 
-async def delete_file(api_key, file):
+async def delete_file(api_key: str, file: types.File) -> types.DeleteFileResponse:
+    """
+    Deletes a file from the Google GenAI API.
+    """
     client = genai.Client(api_key=api_key)
     await client.aio.files.delete(name=file.name)
 
 
-async def audio_to_subtitles(api_key, file, audio_format, language):
+async def audio_to_subtitles(
+    api_key: str,
+    file: types.File,
+    audio_format: str,
+    language: str,
+) -> str | None:
+    """
+    Converts an audio file to subtitles.
+    """
     client = genai.Client(api_key=api_key)
 
     system_instruction = """
@@ -469,13 +483,15 @@ async def audio_to_subtitles(api_key, file, audio_format, language):
         text = __remove_unneeded_characters(text)
         text = __fix_invalid_timestamp(text)
         return text
-    except ClientError:
+
+    except (ClientError, ServerError) as e:
+        print(f"Error: {str(e)}")
         return None
-    except ServerError:
-        return None
+
 
 def __remove_unneeded_characters(text: str) -> str:
     return text.strip().strip("```").strip("srt")
+
 
 def __fix_invalid_timestamp(text: str) -> str:
     pattern = re.compile(r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE)
