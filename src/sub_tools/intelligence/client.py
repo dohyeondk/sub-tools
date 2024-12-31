@@ -35,15 +35,19 @@ async def audio_to_subtitles(
     system_instruction = """
     You're a professional transcriber and translator. 
     You take an audio file and the target language. 
-    You wil return an accurate, high-quality SubRip Subtitle (SRT) file. 
+    You wil return an accurate, high-quality SubRip Subtitle (SRT) file that covers the entire audio file.
     Ensure the following guidelines are followed:
 
+    instructions:
+
     1. Timing
-        - Break the subtitles into manageable time segments. Each segment should be under 2 lines of text and should last 2-5 seconds.
-        - Ensure the timing aligns closely with the spoken words for synchronization. Subtitles should not overlap. There should be a slight gap between the end of one subtitle and the start of the next.
+        - Break the subtitles into manageable time segments. Each segment should be under 2 lines of text and should not be longer than 5 seconds.
+        - Ensure the timing aligns closely with the spoken words for synchronization. Subtitles should not overlap. There could be a slight gap between the end of one subtitle and the start of the next.
+        - Make sure the subtitles cover the entire audio file.
     2. Formatting
         - Use the standard SRT format with sequential numbering.
         - Include timestamps in hh:mm:ss,ms --> hh:mm:ss,ms format (e.g., 00:00:01,500 --> 00:00:04,000).
+        - If timestamp is invalid (e.g. 04:41,454), fix it (e.g. 00:04:41,454)
     3. Text Quality
         - Ensure all speech is transcribed clearly and accurately, maintaining the essence of the spoken content.
         - Use proper grammar, punctuation, and spelling.
@@ -53,16 +57,10 @@ async def audio_to_subtitles(
         - Use the correct language, dialect, and accent representation (e.g., British English, American English).
         - Should not using profanity words. (e.g. use "dang" instead of "damn")
 
+    example: 
+
     An SRT file contains subtitles in a specific format, making it easy to add captions to videos. 
     Here's how an SRT file is structured:
-
-    1. Numeric counter: Each subtitle sequence is identified by a numeric counter, starting from 1. This counter helps keep track of the order of subtitles. When importing an SRT file, this counter is dismissed and then restored during exporting.
-    2. Timecode: Each subtitle has a timecode that specifies when it should appear and disappear on the screen. The format is `hours:minutes,milliseconds (00:00:00,000)`.    
-    3. Subtitle text: The actual text of the subtitle, which can span one or multiple lines. This text is saved as a translation value on localization platforms. The text can include basic HTML-like tags for formatting (e.g., `<b>` for bold, `<i>` for italics).    
-    4. Blank line: A blank line separates each subtitle block, indicating the end of the current subtitle and the start of the next. If there is no black line between blocks, add one.
-    5. If timestamp is invalid (e.g. 04:41,454), fix it (e.g. 00:04:41,454)
-
-    Here's an example of an SRT file:
 
     1
     00:00:00,000 --> 00:00:04,620
