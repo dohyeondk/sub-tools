@@ -1,6 +1,7 @@
 import argparse
 
 from argparse import ArgumentParser, Namespace
+from importlib.metadata import version
 from .env_default import EnvDefault
 
 
@@ -87,6 +88,13 @@ def build_parser() -> ArgumentParser:
         type=int,
         default=50,
         help="Number of times to retry the tasks (default: %(default)s)."
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=version("sub-tools"),
+        help="Show program's version number and exit."
     )
 
     def print_help() -> None:
