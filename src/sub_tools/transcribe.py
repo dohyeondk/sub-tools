@@ -30,7 +30,8 @@ async def __transcribe(parsed) -> None:
                     offset,
                     language_code,
                     parsed.gemini_api_key,
-                    parsed.retry
+                    parsed.retry,
+                    parsed.debug,
                 )
             )
             tasks.append(task)
@@ -44,7 +45,8 @@ async def __transcribe_item(
     offset: int,
     language_code: str,
     api_key: str,
-    retry: int
+    retry: int,
+    debug: bool,
 ) -> None:
     async with semaphore:
         language = get_language_name(language_code)
@@ -60,16 +62,19 @@ async def __transcribe_item(
                 try:
                     subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
                     validate_subtitles(subtitles, duration_ms)                    
-                    write_log("Valid", language, offset, subtitles)
+                    if debug:
+                        write_log("Valid", language, offset, subtitles)
                     serialize_subtitles(subtitles, language_code, int(offset))
                     break
 
                 except (SubtitleValidationError, Exception) as e:
-                    write_log("Invalid", e, language, offset, subtitles)
+                    if debug:
+                        write_log("Invalid", e, language, offset, subtitles)
                     await asyncio.sleep(min(2 ** attempt, 60))
 
         except Exception as e:
-            print(f"Error: {str(e)}")
+            if debug:
+                print(f"Error: {str(e)}")
 
         finally:
             await delete_file(api_key, file)

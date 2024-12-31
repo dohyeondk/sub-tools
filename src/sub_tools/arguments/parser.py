@@ -97,6 +97,12 @@ def build_parser() -> ArgumentParser:
         help="Show program's version number and exit."
     )
 
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode."
+    )
+
     def print_help() -> None:
         parser.print_help()
     parser.set_defaults(func=print_help)
