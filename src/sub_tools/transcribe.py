@@ -55,6 +55,6 @@ async def __transcribe_item(audio_segment_path, audio_segment_format, offset, la
                 break
             else:
                 write_log("Invalid", language, offset, subtitles)
-                await asyncio.sleep(10)
+                await asyncio.sleep(1 + i)
 
         await delete_file(api_key, file)
