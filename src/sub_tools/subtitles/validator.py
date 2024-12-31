@@ -27,10 +27,10 @@ def validate_subtitles(content, duration):
     Returns:
         bool: True if the subtitles are valid, False otherwise.
     """
-    max_valid_duration = 20_000    # Maximum allowed duration for any single subtitle (ms)
-    begin_gap_threshold = 5_000    # Maximum allowed gap at the beginning (ms)
-    end_gap_threshold = 20_000     # Maximum allowed gap at the end (ms)
-    inter_item_gap_threshold = 20_000  # Maximum allowed gap between consecutive subtitles (ms)
+    max_valid_duration = 20_000       # Maximum allowed duration for any single subtitle (ms)
+    begin_gap_threshold = 5_000       # Maximum allowed gap at the beginning (ms)
+    end_gap_threshold = 10_000        # Maximum allowed gap at the end (ms)
+    inter_item_gap_threshold = 5_000  # Maximum allowed gap between consecutive subtitles (ms)
 
     # Parse the subtitles string into a list of subtitle items.
     try:
