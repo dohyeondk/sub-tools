@@ -23,4 +23,4 @@ def main():
             parsed.func()
 
     except Exception as e:
-        print(f"Unexpected error: {str(e)}")
+        print(f"Error: {str(e)}")

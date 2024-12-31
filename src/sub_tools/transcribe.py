@@ -70,7 +70,7 @@ async def __transcribe_item(
                     await asyncio.sleep(min(2 ** attempt, 60))
 
         except Exception as e:
-            print(f"Unexpected error: {str(e)}")
+            print(f"Error: {str(e)}")
 
         finally:
             await delete_file(api_key, file)
