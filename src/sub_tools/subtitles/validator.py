@@ -1,3 +1,4 @@
+import re
 import pysrt
 
 
@@ -47,3 +48,28 @@ def validate_subtitles(content, duration):
         return False
 
     return True
+
+
+def fix_subtitles(content):
+    """
+    Given subtitles content that might contain a subtitle timestamp line, attempt to fix it.
+    Example input:  "02:27,170 --> 02:28,430"
+    Example output: "00:02:27,170 --> 00:02:28,430"
+    """
+    lines = [__fix_subtitle_lin(line) for line in content.splitlines()]
+    return "\n".join(lines)
+
+def __fix_subtitle_lin(line):
+    pattern = r'^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$'
+    match = re.match(pattern, line.strip())
+    if match:
+        left_timestamp, right_timestamp = match.groups()
+        fixed_left, fixed_right = __fix_subtitle_timestamp(left_timestamp), __fix_subtitle_timestamp(right_timestamp)
+        return f"{fixed_left} --> {fixed_right}"
+    else:
+        return line
+
+def __fix_subtitle_timestamp(timestamp):
+    if timestamp.count(':') == 1:
+        timestamp = "00:" + timestamp
+    return timestamp
