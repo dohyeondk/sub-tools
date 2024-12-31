@@ -1,6 +1,8 @@
+import re
+
 from google import genai
 from google.genai import types
-from google.genai.errors import ClientError
+from google.genai.errors import ClientError, ServerError
 
 
 async def upload_file(api_key, path):
@@ -464,7 +466,17 @@ async def audio_to_subtitles(api_key, file, audio_format, language):
             ),
         )
         text = response.candidates[0].content.parts[-1].text
-        text = text.strip().strip("```").strip("srt")
+        text = __remove_unneeded_characters(text)
+        text = __fix_invalid_timestamp(text)
         return text
     except ClientError:
         return None
+    except ServerError:
+        return None
+
+def __remove_unneeded_characters(text: str) -> str:
+    return text.strip().strip("```").strip("srt")
+
+def __fix_invalid_timestamp(text: str) -> str:
+    pattern = re.compile(r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$")
+    return pattern.sub(r'00:\1 --> 00:\2', text)
