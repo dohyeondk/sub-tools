@@ -36,6 +36,8 @@ def segment_audio(
         print("Segmented audio files already exist. Skipping segmentation...")
         return
     
+    print(f"Segmenting audio file {audio_file}...")
+    
     audio = AudioSegment.from_file(audio_file, format="mp3")
 
     segment_ranges = __get_segment_ranges(audio, audio_segment_length, config)
@@ -99,7 +101,7 @@ def __find_split_point(
             seek_step=config.seek_step
         )
 
-        if silent_ranges and len(silence_length) > 0:
+        if silent_ranges and len(silent_ranges) > 0:
             silent_start, silent_end = silent_ranges[0]
             return start_ms + (silent_start + silent_end) // 2
 
