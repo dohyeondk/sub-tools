@@ -67,8 +67,9 @@ def _get_segment_ranges(
             break
 
         intended_end = current_start + segment_length
-        search_start = max(current_start, intended_end - int(segment_length * config.search_window_ratio))
-        search_end = min(total_length, intended_end)
+        search_window_length = int(segment_length * config.search_window_ratio)
+        search_start = max(current_start, intended_end - search_window_length)
+        search_end = min(total_length, intended_end + search_window_length)
 
         split_point = _find_split_point(audio, search_start, search_end, config)
 
