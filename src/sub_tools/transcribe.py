@@ -61,8 +61,9 @@ async def _transcribe_item(
         file = None
 
         try:
-            file = await upload_file(api_key, f"{config.directory}/{audio_segment_path}")
-            duration_ms = get_duration(audio_segment_path) * 1000
+            file_path = f"{config.directory}/{audio_segment_path}"
+            file = await upload_file(api_key, file_path)
+            duration_ms = get_duration(file_path) * 1000
 
             for attempt in range(retry):
                 print(f"Transcribe attempt {attempt + 1}/{retry} for audio at {offset} to {language}")

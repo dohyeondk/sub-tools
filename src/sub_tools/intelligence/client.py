@@ -18,7 +18,7 @@ async def delete_file(api_key: str, file: types.File) -> types.DeleteFileRespons
     Deletes a file from the Google GenAI API.
     """
     client = genai.Client(api_key=api_key)
-    await client.aio.files.delete(name=file.name)
+    return await client.aio.files.delete(name=file.name)
 
 
 async def audio_to_subtitles(
