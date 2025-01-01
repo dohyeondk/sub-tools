@@ -1,23 +1,35 @@
 import pysrt
 
+from dataclasses import dataclass
 from sub_tools.system.directory import paths_with_offsets
 
 
-def combine_subtitles(language_codes: list[str]) -> None:
+@dataclass
+class CombineConfig:
+    directory: str = "tmp"
+
+
+def combine_subtitles(
+    language_codes: list[str],
+    config: CombineConfig = CombineConfig()
+) -> None:
     """
     Combines subtitles for a list of languages.
     """
     print("Combining subtitles...")
     for language_code in language_codes:
-        combine_subtitles_for_language(language_code)
+        combine_subtitles_for_language(language_code, config)
 
 
-def combine_subtitles_for_language(language_code: str) -> None:
+def combine_subtitles_for_language(
+    language_code: str, 
+    config: CombineConfig,
+) -> None:
     """
     Combines subtitles for a single language.
     """
     subs = pysrt.SubRipFile()
-    for path, offset in paths_with_offsets(language_code, "srt"):
+    for path, offset in paths_with_offsets(language_code, "srt", f"./{config.directory}"):
         current_subs = pysrt.open(path)
         subs += current_subs
     subs.clean_indexes()

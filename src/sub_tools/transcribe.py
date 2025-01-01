@@ -1,5 +1,6 @@
 import asyncio
 
+from dataclasses import dataclass
 from .intelligence.client import audio_to_subtitles, upload_file, delete_file
 from .media.info import get_duration
 from .subtitles.serializer import serialize_subtitles
@@ -13,15 +14,20 @@ max_concurrent_tasks = 4
 semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
 
-def transcribe(parsed) -> None:
+@dataclass
+class TranscribeConfig:
+    directory: str = "tmp"
+
+
+def transcribe(parsed, config: TranscribeConfig = TranscribeConfig()) -> None:
     print("Transcribing...")
-    asyncio.run(_transcribe(parsed))
+    asyncio.run(_transcribe(parsed, config))
 
 
-async def _transcribe(parsed) -> None:
+async def _transcribe(parsed, config: TranscribeConfig) -> None:
     tasks = []
 
-    for path, offset in paths_with_offsets(parsed.audio_segment_prefix, parsed.audio_segment_format):
+    for path, offset in paths_with_offsets(parsed.audio_segment_prefix, parsed.audio_segment_format, f"./{config.directory}"):
         for language_code in parsed.languages:
             task = asyncio.create_task(
                 _transcribe_item(
@@ -32,6 +38,7 @@ async def _transcribe(parsed) -> None:
                     parsed.gemini_api_key,
                     parsed.retry,
                     parsed.debug,
+                    config,
                 )
             )
             tasks.append(task)
@@ -47,6 +54,7 @@ async def _transcribe_item(
     api_key: str,
     retry: int,
     debug: bool,
+    config: TranscribeConfig,
 ) -> None:
     async with semaphore:
         language = get_language_name(language_code)
@@ -64,7 +72,7 @@ async def _transcribe_item(
                     validate_subtitles(subtitles, duration_ms)                    
                     if debug:
                         write_log("Valid", language, offset, subtitles)
-                    serialize_subtitles(subtitles, language_code, int(offset))
+                    serialize_subtitles(subtitles, language_code, int(offset), config.directory)
                     break
 
                 except (SubtitleValidationError, Exception) as e:

@@ -12,6 +12,7 @@ class SegmentConfig:
     silence_threshold_db: int = 16    # dB below average segment volume
     search_window_ratio: float = 0.1  # 10% of segment length
     seek_step: int = 100              # 100 ms
+    directory: str = "tmp"
     
 
 def segment_audio(
@@ -31,7 +32,7 @@ def segment_audio(
         audio_segment_length: Maximum segment length in ms
         config: Segmentation configuration parameters
     """
-    first_segment = f"{audio_segment_prefix}_0.{audio_segment_format}"
+    first_segment = f"{config.directory}/{audio_segment_prefix}_0.{audio_segment_format}"
     if os.path.exists(first_segment):
         print("Segmented audio files already exist. Skipping segmentation...")
         return
@@ -39,12 +40,10 @@ def segment_audio(
     print(f"Segmenting audio file {audio_file}...")
     
     audio = AudioSegment.from_file(audio_file, format="mp3")
-
     segment_ranges = _get_segment_ranges(audio, audio_segment_length, config)
-    audio = AudioSegment.from_file(audio_file)
 
     for start_ms, end_ms in segment_ranges:
-        output_file = f"{audio_segment_prefix}_{start_ms}.{audio_segment_format}"
+        output_file = f"{config.directory}/{audio_segment_prefix}_{start_ms}.{audio_segment_format}"
         partial_audio = audio[start_ms:end_ms]
         partial_audio.export(output_file, format=audio_segment_format)
 
