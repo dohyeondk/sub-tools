@@ -70,7 +70,7 @@ async def _transcribe_item(
 
                 try:
                     subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
-                    validate_subtitles(subtitles, duration_ms)                    
+                    validate_subtitles(subtitles, duration_ms)
                     if debug:
                         write_log("Valid", language, offset, subtitles, directory=f"./{config.directory}")
                     serialize_subtitles(subtitles, language_code, int(offset), config.directory)
@@ -79,7 +79,7 @@ async def _transcribe_item(
                 except (SubtitleValidationError, Exception) as e:
                     if debug:
                         write_log("Invalid", e, language, offset, subtitles, directory=f"./{config.directory}")
-                    await asyncio.sleep(min(2 ** attempt, 60))
+                    await asyncio.sleep(min(2**attempt, 60))
 
         except Exception as e:
             if debug:

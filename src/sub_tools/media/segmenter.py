@@ -9,13 +9,14 @@ class SegmentConfig:
     """
     Configuration for audio segmentation.
     """
-    min_silence_length: int = 1_000   # 1 second
-    step_down_length: int = 200       # 200 ms
-    silence_threshold_db: int = 16    # dB below average segment volume
+
+    min_silence_length: int = 1_000  # 1 second
+    step_down_length: int = 200  # 200 ms
+    silence_threshold_db: int = 16  # dB below average segment volume
     search_window_ratio: float = 0.1  # 10% of segment length
-    seek_step: int = 100              # 100 ms
+    seek_step: int = 100  # 100 ms
     directory: str = "tmp"
-    
+
 
 def segment_audio(
     audio_file: str,
@@ -27,13 +28,15 @@ def segment_audio(
     """
     Segments an audio file using natural pauses.
     """
-    first_segment = f"{config.directory}/{audio_segment_prefix}_0.{audio_segment_format}"
+    first_segment = (
+        f"{config.directory}/{audio_segment_prefix}_0.{audio_segment_format}"
+    )
     if os.path.exists(first_segment):
         print("Segmented audio files already exist. Skipping segmentation...")
         return
-    
+
     print(f"Segmenting audio file {audio_file}...")
-    
+
     audio = AudioSegment.from_file(audio_file, format="mp3")
     segment_ranges = _get_segment_ranges(audio, audio_segment_length, config)
 
@@ -95,7 +98,7 @@ def _find_split_point(
             segment,
             min_silence_len=silence_length,
             silence_thresh=segment.dBFS - config.silence_threshold_db,
-            seek_step=config.seek_step
+            seek_step=config.seek_step,
         )
 
         if silent_ranges and len(silent_ranges) > 0:

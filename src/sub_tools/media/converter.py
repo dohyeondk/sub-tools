@@ -36,16 +36,20 @@ def video_to_audio(
     if os.path.exists(audio_file) and not overwrite:
         print(f"Audio file {audio_file} already exists. Skipping conversion...")
         return
-    
+
     print(f"Converting {video_file} to {audio_file}...")
 
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-i", video_file,
-        "-vn",
-        "-c:a", "libmp3lame",
-        audio_file
-    ], check=True, capture_output=True)
+    subprocess.run(
+        [
+            "ffmpeg", "-y", 
+            "-i", video_file, 
+            "-vn", 
+            "-c:a", "libmp3lame", 
+            audio_file,
+        ],
+        check=True,
+        capture_output=True,
+    )
 
 
 def media_to_signature(
@@ -62,8 +66,13 @@ def media_to_signature(
 
     print(f"Generating signature for {media_file}...")
 
-    subprocess.run([
-        "shazam", "signature",
-        "--input", media_file,
-        "--output", signature_file,
-    ], check=True, capture_output=True)
+    subprocess.run(
+        [
+            "shazam",
+            "signature",
+            "--input", media_file,
+            "--output", signature_file,
+        ],
+        check=True,
+        capture_output=True,
+    )

@@ -467,7 +467,7 @@ async def audio_to_subtitles(
 
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-2.0-flash-thinking-exp-1219',
+            model="gemini-2.0-flash-thinking-exp-1219",
             contents=[
                 types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"),
                 language,
@@ -493,4 +493,4 @@ def _remove_unneeded_characters(text: str) -> str:
 
 def _fix_invalid_timestamp(text: str) -> str:
     pattern = re.compile(r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE)
-    return pattern.sub(r'00:\1 --> 00:\2', text)
+    return pattern.sub(r"00:\1 --> 00:\2", text)

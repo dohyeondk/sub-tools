@@ -9,10 +9,7 @@ class CombineConfig:
     directory: str = "tmp"
 
 
-def combine_subtitles(
-    language_codes: list[str],
-    config: CombineConfig = CombineConfig()
-) -> None:
+def combine_subtitles(language_codes: list[str], config: CombineConfig = CombineConfig()) -> None:
     """
     Combines subtitles for a list of languages.
     """
@@ -22,7 +19,7 @@ def combine_subtitles(
 
 
 def combine_subtitles_for_language(
-    language_code: str, 
+    language_code: str,
     config: CombineConfig,
 ) -> None:
     """
