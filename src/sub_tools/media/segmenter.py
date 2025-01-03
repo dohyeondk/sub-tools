@@ -28,9 +28,7 @@ def segment_audio(
     """
     Segments an audio file using natural pauses.
     """
-    first_segment = (
-        f"{config.directory}/{audio_segment_prefix}_0.{audio_segment_format}"
-    )
+    first_segment = f"{config.directory}/{audio_segment_prefix}_0.{audio_segment_format}"
     if os.path.exists(first_segment):
         print("Segmented audio files already exist. Skipping segmentation...")
         return

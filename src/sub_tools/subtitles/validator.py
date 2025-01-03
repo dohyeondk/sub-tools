@@ -60,7 +60,9 @@ def _validate_subtitle_count(subs: SubRipFile, min_count: int) -> None:
     Validate minimum number of subtitles.
     """
     if len(subs) < min_count:
-        raise SubtitleValidationError(f"Not enough subtitles. Found {len(subs)}, minimum required: {min_count}")
+        raise SubtitleValidationError(
+            f"Not enough subtitles. Found {len(subs)}, minimum required: {min_count}"
+        )
 
 
 def _validate_subtitle_durations(subs: SubRipFile, max_duration: int) -> None:
@@ -69,7 +71,10 @@ def _validate_subtitle_durations(subs: SubRipFile, max_duration: int) -> None:
     """
     for item in subs:
         if item.duration.ordinal > max_duration:
-            raise SubtitleValidationError(f"Subtitle duration too long: {item.duration.ordinal}ms " f"(max: {max_duration}ms) at {item.start} --> {item.end}")
+            raise SubtitleValidationError(
+                f"Subtitle duration too long: {item.duration.ordinal}ms "
+                f"(max: {max_duration}ms) at {item.start} --> {item.end}"
+            )
 
 
 def _validate_time_boundaries(subs: SubRipFile, duration: int, config: ValidateConfig) -> None:
@@ -78,11 +83,15 @@ def _validate_time_boundaries(subs: SubRipFile, duration: int, config: ValidateC
     """
     begin_gap = abs(subs[0].start.ordinal)
     if begin_gap > config.begin_gap_threshold:
-        raise SubtitleValidationError(f"Initial gap too large: {begin_gap}ms (max: {config.begin_gap_threshold}ms)")
+        raise SubtitleValidationError(
+            f"Initial gap too large: {begin_gap}ms (max: {config.begin_gap_threshold}ms)"
+        )
 
     end_gap = abs(subs[-1].end.ordinal - duration)
     if end_gap > config.end_gap_threshold:
-        raise SubtitleValidationError(f"Final gap too large: {end_gap}ms (max: {config.end_gap_threshold}ms)")
+        raise SubtitleValidationError(
+            f"Final gap too large: {end_gap}ms (max: {config.end_gap_threshold}ms)"
+        )
 
 
 def _validate_time_ordering(subs: SubRipFile) -> None:
@@ -91,7 +100,9 @@ def _validate_time_ordering(subs: SubRipFile) -> None:
     """
     for i, item in enumerate(subs, 1):
         if item.start > item.end:
-            raise SubtitleValidationError(f"Invalid timing in subtitle #{i}: " f"start ({item.start}) after end ({item.end})")
+            raise SubtitleValidationError(
+                f"Invalid timing in subtitle #{i}: " f"start ({item.start}) after end ({item.end})"
+            )
 
 
 def _validate_gaps(subs: SubRipFile, max_gap: int) -> None:
@@ -101,4 +112,7 @@ def _validate_gaps(subs: SubRipFile, max_gap: int) -> None:
     for i in range(len(subs) - 1):
         gap = subs[i + 1].start.ordinal - subs[i].end.ordinal
         if gap > max_gap:
-            raise SubtitleValidationError(f"Gap too large between subtitles #{i + 1} and #{i + 2}: " f"{gap}ms (max: {max_gap}ms)")
+            raise SubtitleValidationError(
+                f"Gap too large between subtitles #{i + 1} and #{i + 2}: "
+                f"{gap}ms (max: {max_gap}ms)"
+            )

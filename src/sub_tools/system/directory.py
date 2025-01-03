@@ -11,11 +11,13 @@ def change_directory(directory: str) -> None:
     os.makedirs("tmp", exist_ok=True)
 
 
-def paths_with_offsets(prefix: str, file_format: str, directory: str = ".") -> list[tuple[str, int]]:
+def paths_with_offsets(
+    prefix: str, file_format: str, directory: str = "."
+) -> list[tuple[str, int]]:
     """
     Returns a list of paths with offsets.
     """
-    pattern = fr"{prefix}_(\d+)\.{file_format}"
+    pattern = rf"{prefix}_(\d+)\.{file_format}"
     return [
         (path, match.group(1))
         for path in sorted(os.listdir(directory))
