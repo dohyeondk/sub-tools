@@ -24,6 +24,13 @@ A robust Python toolkit powered by Google's Gemini API for converting video cont
 pip install sub-tools
 ```
 
+### Usage
+
+```shell
+export GEMINI_API_KEY={your_api_key}
+sub-tools --hls-url https://example.com/hls/video.m3u8 --languages en es fr
+```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
