@@ -1,0 +1,31 @@
+name: Publish
+
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: python
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.14"
+
+      - name: Setup FFmpeg
+        uses: federicocarboni/setup-ffmpeg@v3.1
+  
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Build the project
+        run: uv build
+
+      - name: Publish the project
+        run: uv publish
