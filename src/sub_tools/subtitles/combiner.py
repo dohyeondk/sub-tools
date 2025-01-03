@@ -30,7 +30,7 @@ def combine_subtitles_for_language(
     """
     subs = pysrt.SubRipFile()
     for path, offset in paths_with_offsets(language_code, "srt", f"./{config.directory}"):
-        current_subs = pysrt.open(path)
+        current_subs = pysrt.open(f"{config.directory}/{path}")
         subs += current_subs
     subs.clean_indexes()
     subs.save(f"{language_code}.srt", encoding="utf-8")
