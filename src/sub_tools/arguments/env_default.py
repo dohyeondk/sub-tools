@@ -6,6 +6,7 @@ class EnvDefault(argparse.Action):
     """
     https://stackoverflow.com/a/10551190
     """
+
     def __init__(self, env_name, required=True, default=None, **kwargs):
         if env_name:
             if env_name in os.environ:
