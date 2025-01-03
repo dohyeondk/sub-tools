@@ -22,11 +22,7 @@ A robust Python toolkit powered by Google's Gemini API for converting video cont
 ### Installation
 
 ```shell
-# Using pip
 pip install sub-tools
-
-# Using uv (recommended)
-uv pip install sub-tools
 ```
 
 ## 🤝 Contributing
