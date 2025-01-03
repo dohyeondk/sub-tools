@@ -1,4 +1,5 @@
 import os
+import ffmpeg
 import subprocess
 
 
@@ -17,12 +18,18 @@ def hls_to_media(
 
     print(f"Downloading {'audio' if audio_only else 'video'} from {hls_url}...")
 
-    cmd = ["ffmpeg", "-y", "-i", hls_url]
+    stream = ffmpeg.input(hls_url)
     if audio_only:
-        cmd.extend(["-vn", "-c:a", "libmp3lame"])
-    cmd.append(output_file)
-
-    subprocess.run(cmd, check=True, capture_output=True)
+        stream = stream.audio
+        stream = ffmpeg.output(stream, output_file, acodec="libmp3lame")
+    else:
+        stream = ffmpeg.output(stream, output_file)
+    ffmpeg.run(
+        stream, 
+        overwrite_output=overwrite,
+        capture_stdout=True,
+        capture_stderr=True
+    )
 
 
 def video_to_audio(
@@ -39,16 +46,14 @@ def video_to_audio(
 
     print(f"Converting {video_file} to {audio_file}...")
 
-    subprocess.run(
-        [
-            "ffmpeg", "-y", 
-            "-i", video_file, 
-            "-vn", 
-            "-c:a", "libmp3lame", 
-            audio_file,
-        ],
-        check=True,
-        capture_output=True,
+    stream = ffmpeg.input(video_file)
+    stream = stream.audio
+    stream = ffmpeg.output(stream, audio_file, acodec="libmp3lame")
+    ffmpeg.run(
+        stream, 
+        overwrite_output=overwrite,
+        capture_stdout=True,
+        capture_stderr=True
     )
 
 
