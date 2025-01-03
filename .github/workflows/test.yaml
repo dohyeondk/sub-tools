@@ -1,4 +1,4 @@
-name: Test and Publish
+name: Test
 
 on: 
   push:
@@ -35,31 +35,3 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
-
-  publish:
-    name: Publish to PyPI
-    needs: test  # This ensures test job must pass first
-    if: github.ref == 'refs/heads/main'  # Only run on main branch
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.5.14"
-
-      - name: Setup FFmpeg
-        uses: federicocarboni/setup-ffmpeg@v3.1
-  
-      - name: Install the project
-        run: uv sync --all-extras --dev
-
-      - name: Build the project
-        run: uv build
-
-      - name: Publish the project
-        run: uv publish
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.UV_PUBLISH_TOKEN }}
