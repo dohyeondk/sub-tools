@@ -6,16 +6,20 @@ from pysrt import SubRipFile
 
 @dataclass
 class ValidateConfig:
-    """Configuration for subtitle validation."""
+    """
+    Configuration for subtitle validation.
+    """
     max_valid_duration: int = 20_000       # Maximum allowed duration for any single subtitle (ms)
     begin_gap_threshold: int = 5_000       # Maximum allowed gap at the beginning (ms)
     end_gap_threshold: int = 10_000        # Maximum allowed gap at the end (ms)
     inter_item_gap_threshold: int = 5_000  # Maximum allowed gap between consecutive subtitles (ms)
-    min_subtitles: int = 2                # Minimum number of subtitles
+    min_subtitles: int = 2                 # Minimum number of subtitles
 
 
 class SubtitleValidationError(Exception):
-    """Custom exception for subtitle validation errors."""
+    """
+    Custom exception for subtitle validation errors.
+    """
     pass
 
 
@@ -26,16 +30,7 @@ def validate_subtitles(
 ) -> None:
     """
     Validate subtitles against specified criteria.
-
-    Args:
-        content: Subtitles in SRT format
-        duration: Total duration in milliseconds
-        config: Validation configuration parameters
-
-    Raises:
-        SubtitleValidationError: If any validation check fails
     """
-    # Parse the subtitles string into a list of subtitle items.
     try:
         subs = _parse_subtitles(content)
         _validate_subtitle_count(subs, config.min_subtitles)
@@ -49,7 +44,9 @@ def validate_subtitles(
 
 
 def _parse_subtitles(content: str) -> SubRipFile:
-    """Parse SRT content into subtitle objects."""
+    """
+    Parse SRT content into subtitle objects.
+    """
     try:
         return pysrt.from_string(content)
     except Exception as e:
@@ -59,7 +56,9 @@ def _parse_subtitles(content: str) -> SubRipFile:
 
 
 def _validate_subtitle_count(subs: SubRipFile, min_count: int) -> None:
-    """Validate minimum number of subtitles."""
+    """
+    Validate minimum number of subtitles.
+    """
     if len(subs) < min_count:
         raise SubtitleValidationError(
             f"Not enough subtitles. Found {len(subs)}, minimum required: {min_count}"
@@ -67,7 +66,9 @@ def _validate_subtitle_count(subs: SubRipFile, min_count: int) -> None:
 
 
 def _validate_subtitle_durations(subs: SubRipFile, max_duration: int) -> None:
-    """Validate individual subtitle durations."""
+    """
+    Validate individual subtitle durations.
+    """
     for item in subs:
         if item.duration.ordinal > max_duration:
             raise SubtitleValidationError(
@@ -81,7 +82,9 @@ def _validate_time_boundaries(
     duration: int,
     config: ValidateConfig
 ) -> None:
-    """Validate start and end time boundaries."""
+    """
+    Validate start and end time boundaries.
+    """
     begin_gap = abs(subs[0].start.ordinal)
     if begin_gap > config.begin_gap_threshold:
         raise SubtitleValidationError(
@@ -96,7 +99,9 @@ def _validate_time_boundaries(
 
 
 def _validate_time_ordering(subs: SubRipFile) -> None:
-    """Validate subtitle timing order."""
+    """
+    Validate subtitle timing order.
+    """
     for i, item in enumerate(subs, 1):
         if item.start > item.end:
             raise SubtitleValidationError(
@@ -106,7 +111,9 @@ def _validate_time_ordering(subs: SubRipFile) -> None:
 
 
 def _validate_gaps(subs: SubRipFile, max_gap: int) -> None:
-    """Validate gaps between consecutive subtitles."""
+    """
+    Validate gaps between consecutive subtitles.
+    """
     for i in range(len(subs) - 1):
         gap = subs[i + 1].start.ordinal - subs[i].end.ordinal
         if gap > max_gap:

@@ -4,7 +4,9 @@ from contextlib import contextmanager
 
 @contextmanager
 def measure():
-    """Measures the time taken for a block of code to execute."""
+    """
+    Measures the time taken for a block of code to execute.
+    """
     start_time = time.time()
     try:
         yield

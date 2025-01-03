@@ -10,12 +10,6 @@ def hls_to_media(
 ) -> None:
     """
     Downloads media from an HLS URL and saves it as video or audio.
-    
-    Args:
-        hls_url: HLS stream URL
-        output_file: Path to save the output file
-        audio_only: If True, download audio only
-        overwrite: If True, overwrite existing file
     """
     if os.path.exists(output_file) and not overwrite:
         print(f"File {output_file} already exists. Skipping download...")

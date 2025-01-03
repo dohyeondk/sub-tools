@@ -6,7 +6,9 @@ from pydub import AudioSegment, silence
 
 @dataclass
 class SegmentConfig:
-    """Configuration for audio segmentation."""
+    """
+    Configuration for audio segmentation.
+    """
     min_silence_length: int = 1_000   # 1 second
     step_down_length: int = 200       # 200 ms
     silence_threshold_db: int = 16    # dB below average segment volume
@@ -24,13 +26,6 @@ def segment_audio(
 ) -> None:
     """
     Segments an audio file using natural pauses.
-
-    Args:
-        audio_file: Path to the source audio file
-        audio_segment_prefix: File prefix for each exported segment
-        audio_segment_format: Audio format for exported segments
-        audio_segment_length: Maximum segment length in ms
-        config: Segmentation configuration parameters
     """
     first_segment = f"{config.directory}/{audio_segment_prefix}_0.{audio_segment_format}"
     if os.path.exists(first_segment):
@@ -89,7 +84,9 @@ def _find_split_point(
     end_ms: int,
     config: SegmentConfig,
 ) -> int | None:
-    """Find optimal split point in audio segment."""
+    """
+    Find optimal split point in audio segment.
+    """
     segment = audio[start_ms:end_ms]
     silence_length = config.min_silence_length
 
