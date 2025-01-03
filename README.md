@@ -1,15 +1,21 @@
 # sub-tools 🎬
 
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A robust toolkit for transcribing and translating video content into accurate, high-quality subtitles using Gemini API. :gemini:
+A robust Python toolkit powered by Google's Gemini API for converting video content into accurate, multilingual subtitles.
 
 ## ✨ Features
 
-- 📝 Subtitle generation from audio content
-- 📚 Subtitle validation and quality control
-- 🎵 Audio fingerprinting and analysis
+- 📝 Subtitle generation from HLS video streams.
+- 📚 Subtitle validation and quality control.
+- 🎵 Audio fingerprinting and analysis using Shazam (macOS only).
+
+## 🛠️ Prerequisites
+
+- Python 3.9 or higher
+- [FFmpeg](https://ffmpeg.org/) installed on your system
+- [uv](https://github.com/astral-sh/uv) (recommended for dependency management)
 
 ## 🚀 Quick Start
 
@@ -22,12 +28,6 @@ pip install sub-tools
 # Using uv (recommended)
 uv pip install sub-tools
 ```
-
-## 🛠️ Prerequisites
-
-- Python 3.13 or higher
-- [FFmpeg](https://ffmpeg.org/) installed on your system
-- [uv](https://github.com/astral-sh/uv) (recommended for dependency management)
 
 ## 🤝 Contributing
 

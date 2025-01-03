@@ -1,5 +1,6 @@
 import re
 
+from typing import Union
 from google import genai
 from google.genai import types
 from google.genai.errors import ClientError, ServerError
@@ -26,7 +27,7 @@ async def audio_to_subtitles(
     file: types.File,
     audio_format: str,
     language: str,
-) -> str | None:
+) -> Union[str, None]:
     """
     Converts an audio file to subtitles.
     """

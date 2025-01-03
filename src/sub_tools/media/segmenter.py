@@ -1,5 +1,6 @@
 import os.path
 
+from typing import Union
 from dataclasses import dataclass
 from pydub import AudioSegment, silence
 
@@ -84,7 +85,7 @@ def _find_split_point(
     start_ms: int,
     end_ms: int,
     config: SegmentConfig,
-) -> int | None:
+) -> Union[int, None]:
     """
     Find optimal split point in audio segment.
     """
