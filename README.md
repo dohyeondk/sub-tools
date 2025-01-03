@@ -11,13 +11,12 @@ A robust Python toolkit powered by Google's Gemini API for converting video cont
 - 📚 Subtitle validation and quality control.
 - 🎵 Audio fingerprinting and analysis using Shazam (macOS only).
 
-## 🛠️ Prerequisites
+## 🚀 Quick Start
+
+### Prerequisites
 
 - Python 3.9 or higher
 - [FFmpeg](https://ffmpeg.org/) installed on your system
-- [uv](https://github.com/astral-sh/uv) (recommended for dependency management)
-
-## 🚀 Quick Start
 
 ### Installation
 
@@ -35,6 +34,10 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 4. Push to the branch (`git push origin feature/{feature-name}`)
 5. Open a Pull Request
 
+### Prerequisites
+
+- [uv](https://github.com/astral-sh/uv)
+
 ### Development Setup
 
 ```shell
@@ -45,7 +48,7 @@ uv sync
 
 ## 🧪 Testing
 
-```bash
+```shell
 uv run pytest
 ```
 
