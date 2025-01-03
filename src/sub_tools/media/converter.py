@@ -66,7 +66,13 @@ def media_to_signature(
     Generates a signature for the media file using the shazam CLI.
     """
     if os.path.exists(signature_file) and not overwrite:
-        print(f"Signature file {signature_file} already exists. Skipping conversion...")
+        print(f"Skipping signature generation: Signature file {signature_file} already exists.")
+        return
+    
+    try:
+        subprocess.run("shazam", capture_output=True, check=True)
+    except (subprocess.SubprocessError, FileNotFoundError):
+        print("Skipping signature generation: Shazam CLI not available.")
         return
 
     print(f"Generating signature for {media_file}...")
