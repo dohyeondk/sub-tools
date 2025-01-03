@@ -9,9 +9,6 @@ from .transcribe import transcribe
 
 
 def main():
-    signal.signal(signal.SIGINT, _signal_handler)
-    signal.signal(signal.SIGTERM, _signal_handler)
-
     try:
         parser = build_parser()
         parsed = parse_args(parser)
@@ -29,8 +26,3 @@ def main():
 
     except Exception as e:
         print(f"Error: {str(e)}")
-
-
-def _signal_handler(signum, frame):
-    print("\nBye!")
-    exit(0)
