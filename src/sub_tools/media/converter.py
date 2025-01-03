@@ -1,5 +1,4 @@
 import os
-from imageio_ffmpeg import get_ffmpeg_exe
 import subprocess
 
 
@@ -18,8 +17,7 @@ def hls_to_media(
 
     print(f"Downloading {'audio' if audio_only else 'video'} from {hls_url}...")
 
-    print(get_ffmpeg_exe())
-    cmd = [get_ffmpeg_exe(), "-y", "-i", hls_url]
+    cmd = ["ffmpeg", "-y", "-i", hls_url]
     if audio_only:
         cmd.extend(["-vn", "-c:a", "libmp3lame"])
     cmd.append(output_file)
@@ -43,7 +41,7 @@ def video_to_audio(
 
     subprocess.run(
         [
-            get_ffmpeg_exe(), "-y", 
+            "ffmpeg", "-y", 
             "-i", video_file, 
             "-vn", 
             "-c:a", "libmp3lame", 

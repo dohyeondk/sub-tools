@@ -213,22 +213,6 @@ wheels = [
 ]
 
 [[package]]
-name = "imageio-ffmpeg"
-version = "0.5.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "setuptools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/22/b0a0d96ecdbd4a8493c6cd7914a8b2bfbc39f8660f81c20e3bde847182e0/imageio-ffmpeg-0.5.1.tar.gz", hash = "sha256:0ed7a9b31f560b0c9d929c5291cd430edeb9bed3ce9a497480e536dd4326484c", size = 17704 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/3d/df5dc571520f495ba2152215cd26deebd46e1530eae0261f503bfd137e99/imageio_ffmpeg-0.5.1-py3-none-macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whl", hash = "sha256:1460e84712b9d06910c1f7bb524096b0341d4b7844cea6c20e099d0a24e795b1", size = 22532925 },
-    { url = "https://files.pythonhosted.org/packages/fe/44/c9e18a73dfd939b5b0ec843870ac72f1f6c17e31a03149b687a85465bff7/imageio_ffmpeg-0.5.1-py3-none-manylinux2010_x86_64.whl", hash = "sha256:5289f75c7f755b499653f3209fea4efd1430cba0e39831c381aad2d458f7a316", size = 26900394 },
-    { url = "https://files.pythonhosted.org/packages/cd/ca/8537cdbf1a6852912cb293fa23dc7adf256cec793113485447f0cbf0fe79/imageio_ffmpeg-0.5.1-py3-none-manylinux2014_aarch64.whl", hash = "sha256:7fa9132a291d5eb28c44553550deb40cbdab831f2a614e55360301a6582eb205", size = 22880461 },
-    { url = "https://files.pythonhosted.org/packages/a9/97/ff7de8ace4425fffc6e8d7646017500c9d5435df608b13cc34de4835ad4f/imageio_ffmpeg-0.5.1-py3-none-win32.whl", hash = "sha256:89efe2c79979d8174ba8476deb7f74d74c331caee3fb2b65ba2883bec0737625", size = 19652102 },
-    { url = "https://files.pythonhosted.org/packages/a9/1c/1b9c72bf839def47626436ea5ebaf643404f7850482c5fafd71a3deeaa94/imageio_ffmpeg-0.5.1-py3-none-win_amd64.whl", hash = "sha256:1521e79e253bedbdd36a547e0cbd94a025ba0b558e17f08fea687d805a0e4698", size = 22619891 },
-]
-
-[[package]]
 name = "iniconfig"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -537,22 +521,12 @@ wheels = [
 ]
 
 [[package]]
-name = "setuptools"
-version = "75.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/54/292f26c208734e9a7f067aea4a7e282c080750c4546559b58e2e45413ca0/setuptools-75.6.0.tar.gz", hash = "sha256:8199222558df7c86216af4f84c30e9b34a61d8ba19366cc914424cdbd28252f6", size = 1337429 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/21/47d163f615df1d30c094f6c8bbb353619274edccf0327b185cc2493c2c33/setuptools-75.6.0-py3-none-any.whl", hash = "sha256:ce74b49e8f7110f9bf04883b730f4765b774ef3ef28f722cce7c273d253aaf7d", size = 1224032 },
-]
-
-[[package]]
 name = "sub-tools"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "audioop-lts", marker = "python_full_version >= '3.13'" },
     { name = "google-genai" },
-    { name = "imageio-ffmpeg" },
     { name = "pycountry" },
     { name = "pydub" },
     { name = "pysrt" },
@@ -563,7 +537,6 @@ dependencies = [
 requires-dist = [
     { name = "audioop-lts", marker = "python_full_version >= '3.13'", specifier = ">=0.2.1" },
     { name = "google-genai", specifier = ">=0.3.0" },
-    { name = "imageio-ffmpeg", specifier = ">=0.5.1" },
     { name = "pycountry", specifier = ">=24.6.1" },
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "pysrt", specifier = ">=1.1.2" },
