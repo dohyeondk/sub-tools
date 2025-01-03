@@ -1,5 +1,3 @@
-import signal
-
 from .arguments.parser import build_parser, parse_args
 from .media.converter import hls_to_media, media_to_signature, video_to_audio
 from .media.segmenter import segment_audio
