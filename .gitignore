@@ -18,3 +18,4 @@ output/
 *.mp3
 *.mp4
 *.shazamsignature
+!tests/data/sample.mp3
