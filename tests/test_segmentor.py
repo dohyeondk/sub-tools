@@ -5,7 +5,6 @@ import pytest
 from pydub import AudioSegment
 from sub_tools.media.segmenter import SegmentConfig, _get_segment_ranges, _find_split_range, segment_audio, _filter_ranges
 
-
 @pytest.fixture
 def sample_audio():
     # 0s        10s        20s        30s        40s        50s        60s
@@ -24,25 +23,22 @@ def test_segment_audio(sample_audio):
 
 def test_get_segment_ranges(sample_audio):
     config = SegmentConfig(
-        min_silence_length=500,
-        silence_threshold_db=16,
-        search_window_ratio=0.1
+        silence_threshold_db=-80,
     )
     
     ranges = _get_segment_ranges(sample_audio, 10_000, config)
     assert len(ranges) == 6
     assert ranges[0][0] == 0
     assert ranges[0][1] == 8_000
-    assert ranges[-1][0] == 50_000
-    assert ranges[-1][1] == 58_000
+    assert 49_900 <= ranges[-1][0] <= 50_100
+    assert 57_900 <= ranges[-1][1] <= 58_100
 
 
 def test_find_split_range(sample_audio):
     config = SegmentConfig(
-        max_silence_length=1000,
-        min_silence_length=500,
-        silence_threshold_db=16,
-        search_window_ratio=0.1
+        max_silence_length=500,
+        silence_threshold_db=-80,
+        seek_step=10,
     )
     
     split_range = _find_split_range(sample_audio, 0, 10_000, config)
@@ -62,6 +58,22 @@ def test_find_split_range(sample_audio):
 
 
 def test_filter_ranges():
+    # No ranges
+    ranges = []
+    filtered_ranges = _filter_ranges(ranges, 1000)
+    assert filtered_ranges == []
+
+    # Silence length is less than min_silence_length
+    ranges = [(0, 50)]
+    filtered_ranges = _filter_ranges(ranges, 1000)
+    assert filtered_ranges == []
+
+    # Silence length is greater than min_silence_length
+    ranges = [(0, 1000)]
+    filtered_ranges = _filter_ranges(ranges, 1000)
+    assert filtered_ranges == [(0, 1000)]
+
+    # Silence length is greater than max_silence_length
     ranges = [(0, 1000), (2000, 3000), (5000, 6000), (6000, 7000)]
     filtered_ranges = _filter_ranges(ranges, 1000)
     assert filtered_ranges == [(0, 1000), (2000, 3000)]

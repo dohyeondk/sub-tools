@@ -12,11 +12,10 @@ class SegmentConfig:
     """
 
     max_silence_length: int = 3_000  # 3 seconds
-    min_silence_length: int = 1_000  # 1 second
-    step_down_length: int = 200  # 200 ms
-    silence_threshold_db: int = 16  # dB below average segment volume
-    search_window_ratio: float = 0.1  # 10% of segment length
-    seek_step: int = 100  # 100 ms
+    min_silence_length: int = 200  # 1 second
+    silence_threshold_db: int = -40
+    db_increment: int = 10
+    seek_step: int = 10  # 10 ms
     directory: str = "tmp"
 
 
@@ -64,7 +63,8 @@ def _get_segment_ranges(
 
         if split_range:
             start_ms, end_ms = split_range
-            ranges.append((start_ms, end_ms))
+            if end_ms - start_ms >= config.min_silence_length:
+                ranges.append((start_ms, end_ms))
             current_start = end_ms
         else:
             current_start = current_end
@@ -82,33 +82,35 @@ def _find_split_range(
     Find optimal split points in audio segment.
     """
     segment = audio[start_ms:end_ms]
-    silence_length = config.min_silence_length
+    silence_threshold_db = config.silence_threshold_db
     non_silent_ranges = []
 
-    while silence_length > 0:
+    while silence_threshold_db < 0:
         non_silent_ranges += silence.detect_nonsilent(
             segment,
-            min_silence_len=silence_length,
-            silence_thresh=segment.dBFS - config.silence_threshold_db,
+            min_silence_len=config.min_silence_length,
+            silence_thresh=silence_threshold_db,
             seek_step=config.seek_step,
         )
 
-        if len(non_silent_ranges) > 0 and non_silent_ranges[-1][1] != segment.duration_seconds * 1000:
+        if len(non_silent_ranges) > 0:
             break
 
-        silence_length -= config.step_down_length
+        silence_threshold_db += config.db_increment
 
+    non_silent_ranges = _filter_ranges(non_silent_ranges, config.max_silence_length)
+    
     if len(non_silent_ranges) > 0:
-        non_silent_ranges = _filter_ranges(non_silent_ranges, config.max_silence_length)
         start_ms, end_ms = non_silent_ranges[0][0] + start_ms, non_silent_ranges[-1][1] + start_ms
-        if (end_ms - start_ms) < config.min_silence_length:
-            return None
         return (start_ms, end_ms)
 
     return None
 
 
-def _filter_ranges(ranges: list[tuple[int, int]], max_silence_length: int) -> list[tuple[int, int]]:
+def _filter_ranges(
+    ranges: list[tuple[int, int]],
+    max_silence_length: int,
+) -> list[tuple[int, int]]:
     """
     Filters ranges by keeping only consecutive segments within max_silence_length.
     """
