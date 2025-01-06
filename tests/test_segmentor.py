@@ -3,7 +3,7 @@ import shutil
 import pytest
 
 from pydub import AudioSegment
-from sub_tools.media.segmenter import SegmentConfig, _get_segment_ranges, _find_split_point, segment_audio
+from sub_tools.media.segmenter import SegmentConfig, _get_segment_ranges, _find_split_range, segment_audio, _filter_ranges
 
 
 @pytest.fixture
@@ -29,21 +29,39 @@ def test_get_segment_ranges(sample_audio):
         search_window_ratio=0.1
     )
     
-    # Test with 5-second segments
     ranges = _get_segment_ranges(sample_audio, 10_000, config)
     assert len(ranges) == 6
-    assert ranges[0][0] == 0  # First segment should start at 0
-    assert ranges[-1][1] == len(sample_audio)  # Last segment should end at total length
+    assert ranges[0][0] == 0
+    assert ranges[0][1] == 8_000
+    assert ranges[-1][0] == 50_000
+    assert ranges[-1][1] == 58_000
 
 
-def test_find_split_point(sample_audio):
+def test_find_split_range(sample_audio):
     config = SegmentConfig(
+        max_silence_length=1000,
         min_silence_length=500,
         silence_threshold_db=16,
         search_window_ratio=0.1
     )
     
-    # Test finding split point in the middle silence
-    split_point = _find_split_point(sample_audio, 5_000, 15_000, config)
-    assert split_point is not None
-    assert 8_000 <= split_point <= 10_000  # Split should be found in the silence
+    split_range = _find_split_range(sample_audio, 0, 10_000, config)
+    assert split_range[0] == 0
+    assert split_range[1] == 8_000
+
+    split_range = _find_split_range(sample_audio, 0, 20_000, config)
+    assert split_range[0] == 0
+    assert split_range[1] == 8_000
+
+    split_range = _find_split_range(sample_audio, 10_000, 20_000, config)
+    assert split_range[0] == 10_000
+    assert split_range[1] == 18_000
+
+    split_range = _find_split_range(sample_audio, 58_000, 58_018, config)
+    assert split_range is None
+
+
+def test_filter_ranges():
+    ranges = [(0, 1000), (2000, 3000), (5000, 6000), (6000, 7000)]
+    filtered_ranges = _filter_ranges(ranges, 1000)
+    assert filtered_ranges == [(0, 1000), (2000, 3000)]
