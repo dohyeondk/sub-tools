@@ -1,4 +1,4 @@
-import os.path
+import glob
 
 from typing import Union
 from dataclasses import dataclass
@@ -24,13 +24,14 @@ def segment_audio(
     audio_segment_prefix: str,
     audio_segment_format: str,
     audio_segment_length: int,
+    overwrite: bool = False,
     config: SegmentConfig = SegmentConfig(),
 ) -> None:
     """
     Segments an audio file using natural pauses.
     """
-    first_segment = f"{config.directory}/{audio_segment_prefix}_0.{audio_segment_format}"
-    if os.path.exists(first_segment):
+    pattern = f"{config.directory}/{audio_segment_prefix}_[0-9]*.{audio_segment_format}"
+    if glob.glob(pattern) and not overwrite:
         print("Segmented audio files already exist. Skipping segmentation...")
         return
 
