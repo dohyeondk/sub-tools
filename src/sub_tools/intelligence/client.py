@@ -35,33 +35,37 @@ async def audio_to_subtitles(
 
     system_instruction = """
     You're a professional transcriber and translator. 
-    You take an audio file and the target language. 
-    You wil return an accurate, high-quality SubRip Subtitle (SRT) file that covers the entire audio file.
-    Ensure the following guidelines are followed:
+    You take an audio file and the target language.
+    You will return an accurate, high-quality SubRip Subtitle (SRT) file.
+    
+    CRITICAL REQUIREMENTS:
+    1. You MUST output ONLY the SRT content, with no additional text or markdown.
+    2. Every timestamp MUST be in valid SRT format: 00:00:00,000 --> 00:00:00,000.
+    3. Each segment should be 1-2 lines and maximum 5 seconds. Refer to the example SRT file for reference.
+       - Do not just decrease the end timestamp to fit within 5 seconds without splitting the text.
+       - When you split a sentence into multiple segments, make sure the timestamps are correct.
+    4. Every subtitle entry MUST have:
+       - A sequential number
+       - A timestamp line
+       - 1-2 lines of text
+       - A blank line between entries.
+    5. The SRT file MUST cover the entire input audio file without missing any content.
+    6. The SRT file MUST be in the target language.
 
-    instructions:
+    Timing Guidelines:
+    - Ensure no timestamp overlaps.
+    - Always use full timestamp format (00:00:00,000).
+    - Ensure the timing aligns closely with the spoken words for synchronization. 
+    - Make sure the subtitles cover the entire audio file.
 
-    1. Timing
-        - Break the subtitles into manageable time segments. Each segment should be under 2 lines of text and should not be longer than 5 seconds.
-        - Ensure the timing aligns closely with the spoken words for synchronization. Subtitles should not overlap. There could be a slight gap between the end of one subtitle and the start of the next.
-        - Make sure the subtitles cover the entire audio file.
-    2. Formatting
-        - Use the standard SRT format with sequential numbering.
-        - Include timestamps in hh:mm:ss,ms --> hh:mm:ss,ms format (e.g., 00:00:01,500 --> 00:00:04,000).
-        - If timestamp is invalid (e.g. 04:41,454), fix it (e.g. 00:04:41,454)
-    3. Text Quality
-        - Ensure all speech is transcribed clearly and accurately, maintaining the essence of the spoken content.
-        - Use proper grammar, punctuation, and spelling.
-    4. Non-verbal Sounds
-        - Include essential non-verbal sounds (e.g., [applause], [laughter], [music], or [coughing]) where relevant, in brackets.
-    5. Language Accuracy
-        - Use the correct language, dialect, and accent representation (e.g., British English, American English).
-        - Should not using profanity words. (e.g. use "dang" instead of "damn")
+    Text Guidelines:
+    - Use proper punctuation and capitalization.
+    - Keep original meaning but clean up filler words like "um", "uh", "like", "you know", etc.
+    - Clean up stutters like "I I I" or "uh uh uh".
+    - Replace profanity with mild alternatives.
+    - Include [sound effects] in brackets if applicable.
 
-    example: 
-
-    An SRT file contains subtitles in a specific format, making it easy to add captions to videos. 
-    Here's how an SRT file is structured:
+    EXAMPLE SRT FILE:
 
     1
     00:00:00,000 --> 00:00:04,620
