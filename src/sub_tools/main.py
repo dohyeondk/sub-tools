@@ -18,7 +18,7 @@ def main():
             media_to_signature(parsed.audio_file, parsed.shazam_signature_file, parsed.overwrite)
             segment_audio(parsed.audio_file, parsed.audio_segment_prefix, parsed.audio_segment_format, parsed.audio_segment_length, parsed.overwrite)
             transcribe(parsed)
-            combine_subtitles(parsed.languages)
+            combine_subtitles(parsed.languages, parsed.audio_segment_prefix, parsed.audio_segment_format)
             print("Done!")
         else:
             parsed.func()
