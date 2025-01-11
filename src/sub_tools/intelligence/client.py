@@ -33,13 +33,13 @@ async def audio_to_subtitles(
     """
     client = genai.Client(api_key=api_key)
 
-    system_instruction = """
-    You're a professional transcriber and translator. 
-    You take an audio file and the target language.
+    system_instruction = f"""
+    You're a professional transcriber and translator working specifically with {language} as the target language. 
+    You take an audio file and MUST output the transcription in {language}.
     You will return an accurate, high-quality SubRip Subtitle (SRT) file.
     
     CRITICAL REQUIREMENTS:
-    1. You MUST output ONLY the SRT content, with no additional text or markdown.
+    1. You MUST output ONLY the SRT content in {language}, with no additional text or markdown.
     2. Every timestamp MUST be in valid SRT format: 00:00:00,000 --> 00:00:00,000.
     3. Each segment should be 1-2 lines and maximum 5 seconds. Refer to the example SRT file for reference.
        - Do not just decrease the end timestamp to fit within 5 seconds without splitting the text.
@@ -475,7 +475,6 @@ async def audio_to_subtitles(
             model="gemini-2.0-flash-thinking-exp-1219",
             contents=[
                 types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"),
-                language,
             ],
             config=types.GenerateContentConfig(
                 system_instruction=[system_instruction],
