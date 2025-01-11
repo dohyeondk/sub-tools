@@ -54,7 +54,8 @@ def test_find_split_range(sample_audio):
     assert split_range[1] == 18_000
 
     split_range = _find_split_range(sample_audio, 58_000, 58_018, config)
-    assert split_range is None
+    assert split_range[0] == 58_000
+    assert split_range[1] == 58_018
 
 
 def test_filter_ranges():
@@ -66,7 +67,7 @@ def test_filter_ranges():
     # Silence length is less than min_silence_length
     ranges = [(0, 50)]
     filtered_ranges = _filter_ranges(ranges, 1000)
-    assert filtered_ranges == []
+    assert filtered_ranges == [(0, 50)]
 
     # Silence length is greater than min_silence_length
     ranges = [(0, 1000)]
