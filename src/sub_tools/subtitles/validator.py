@@ -21,7 +21,6 @@ class SubtitleValidationError(Exception):
     """
     Custom exception for subtitle validation errors.
     """
-
     pass
 
 

@@ -1,7 +1,7 @@
 import asyncio
 
 from dataclasses import dataclass
-from .intelligence.client import audio_to_subtitles, upload_file, delete_file
+from .intelligence.client import audio_to_subtitles, upload_file, delete_file, RateLimitExceededError
 from .media.info import get_duration
 from .subtitles.serializer import serialize_subtitles
 from .subtitles.validator import validate_subtitles, SubtitleValidationError
@@ -17,6 +17,7 @@ semaphore = asyncio.Semaphore(max_concurrent_tasks)
 @dataclass
 class TranscribeConfig:
     directory: str = "tmp"
+    sleep_for_rate_limit: int = 60
 
 
 def transcribe(parsed, config: TranscribeConfig = TranscribeConfig()) -> None:
@@ -76,9 +77,14 @@ async def _transcribe_item(
                     serialize_subtitles(subtitles, language_code, int(offset), config.directory)
                     break
 
+                except RateLimitExceededError:
+                    if debug:
+                        write_log("Rate limit exceeded", language, offset, subtitles or "no subtitles", directory=f"./{config.directory}")
+                    await asyncio.sleep(config.sleep_for_rate_limit)
+
                 except (SubtitleValidationError, Exception) as e:
                     if debug:
-                        write_log("Invalid", e, language, offset, subtitles, directory=f"./{config.directory}")
+                        write_log("Invalid", e, language, offset, subtitles or "no subtitles", directory=f"./{config.directory}")
                     await asyncio.sleep(min(2**attempt, 60))
 
         except Exception as e:

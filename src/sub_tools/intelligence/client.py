@@ -5,6 +5,12 @@ from google import genai
 from google.genai import types
 from google.genai.errors import ClientError, ServerError
 
+class RateLimitExceededError(Exception):
+    """
+    Custom exception for rate limit exceeded errors.
+    """
+    pass
+
 
 async def upload_file(api_key: str, path: str) -> types.File:
     """
@@ -485,8 +491,14 @@ async def audio_to_subtitles(
         text = _remove_unneeded_characters(text)
         text = _fix_invalid_timestamp(text)
         return text
+    
+    except ServerError as e:
+        print(f"Error: {str(e)}")
+        return None
 
-    except (ClientError, ServerError) as e:
+    except ClientError as e:
+        if e.code == 429:
+            raise RateLimitExceededError
         print(f"Error: {str(e)}")
         return None
 
