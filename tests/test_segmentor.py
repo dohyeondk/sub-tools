@@ -64,15 +64,15 @@ def test_filter_ranges():
     filtered_ranges = _filter_ranges(ranges, 1000)
     assert filtered_ranges == []
 
-    # Silence length is less than min_silence_length
-    ranges = [(0, 50)]
-    filtered_ranges = _filter_ranges(ranges, 1000)
-    assert filtered_ranges == [(0, 50)]
-
-    # Silence length is greater than min_silence_length
+    # Single range
     ranges = [(0, 1000)]
     filtered_ranges = _filter_ranges(ranges, 1000)
     assert filtered_ranges == [(0, 1000)]
+
+    # Silent range is less than max_silence_length
+    ranges = [(0, 1000), (2000, 3000), (4000, 6000), (6000, 7000)]
+    filtered_ranges = _filter_ranges(ranges, 1000)
+    assert filtered_ranges == [(0, 1000), (2000, 3000), (4000, 6000), (6000, 7000)]
 
     # Silence length is greater than max_silence_length
     ranges = [(0, 1000), (2000, 3000), (5000, 6000), (6000, 7000)]
