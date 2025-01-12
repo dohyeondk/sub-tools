@@ -94,10 +94,12 @@ def _find_split_range(
             seek_step=config.seek_step,
         )
 
-        ranges = [(r[0] + start_ms, r[1] + start_ms) for r in ranges if r[1] < end_ms - start_ms]
+        non_silent_ranges = [(r[0] + start_ms, r[1] + start_ms) for r in ranges]
 
-        if len(ranges) > 0:
-            non_silent_ranges = ranges
+        if len(non_silent_ranges) > 1:
+            non_silent_ranges = [r for r in non_silent_ranges if r[1] < end_ms]
+
+        if len(non_silent_ranges) > 1:
             break
 
     if len(non_silent_ranges) == 0:
