@@ -98,8 +98,6 @@ def _find_split_range(
 
         if len(non_silent_ranges) > 1:
             non_silent_ranges = [r for r in non_silent_ranges if r[1] < end_ms]
-
-        if len(non_silent_ranges) > 1:
             break
 
     if len(non_silent_ranges) == 0:

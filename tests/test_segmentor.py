@@ -29,10 +29,12 @@ def test_get_segment_ranges(sample_audio):
     
     ranges = _get_segment_ranges(sample_audio, 10_000, config)
     assert len(ranges) == 6
-    assert ranges[0][0] == 0
-    assert ranges[0][1] == 8_000
-    assert ranges[-2][1] == 48_000
-    assert ranges[-1][1] == 58_000
+    assert ranges[0] == (0, 8_000)
+    assert ranges[1] == (10_050, 18_000)
+    assert ranges[2] == (20_050, 28_000)
+    assert ranges[3] == (30_050, 38_000)
+    assert ranges[4] == (40_050, 48_000)
+    assert ranges[5] == (50_050, 58_000)
 
 
 def test_find_split_range(sample_audio):
@@ -43,20 +45,16 @@ def test_find_split_range(sample_audio):
     )
     
     split_range = _find_split_range(sample_audio, 0, 10_000, config)
-    assert split_range[0] == 0
-    assert split_range[1] == 8_000
+    assert split_range == (0, 8_000)
 
     split_range = _find_split_range(sample_audio, 0, 20_000, config)
-    assert split_range[0] == 0
-    assert split_range[1] == 8_000
+    assert split_range == (0, 8_000)
 
     split_range = _find_split_range(sample_audio, 10_000, 20_000, config)
-    assert split_range[0] == 10_000
-    assert split_range[1] == 18_000
+    assert split_range == (10_000, 18_000)
 
     split_range = _find_split_range(sample_audio, 58_000, 58_018, config)
-    assert split_range[0] == 58_000
-    assert split_range[1] == 58_018
+    assert split_range == (58_000, 58_018)
 
 
 def test_filter_ranges():
