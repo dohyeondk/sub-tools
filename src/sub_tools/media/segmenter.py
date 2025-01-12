@@ -11,11 +11,12 @@ class SegmentConfig:
     Configuration for audio segmentation.
     """
 
+    min_segment_length: int = 200  # 200 ms
     max_silence_length: int = 3_000  # 3 seconds
-    min_silence_length: int = 200  # 1 second
-    silence_threshold_db: int = -40
-    db_increment: int = 10
-    seek_step: int = 10  # 10 ms
+    silent_length: int = 1_000  # 1 second
+    silent_length_decrement: int = 200  # 200 ms
+    silence_threshold_db: int = -32
+    seek_step: int = 10
     directory: str = "tmp"
 
 
@@ -64,7 +65,7 @@ def _get_segment_ranges(
 
         if split_range:
             start_ms, end_ms = split_range
-            if end_ms - start_ms >= config.min_silence_length:
+            if end_ms - start_ms >= config.min_segment_length:
                 ranges.append((start_ms, end_ms))
             current_start = end_ms
         else:
@@ -83,26 +84,29 @@ def _find_split_range(
     Find optimal split points in audio segment.
     """
     segment = audio[start_ms:end_ms]
-    silence_threshold_db = config.silence_threshold_db
     non_silent_ranges = []
 
-    while silence_threshold_db < 0:
-        non_silent_ranges += silence.detect_nonsilent(
+    for silent_length in range(config.silent_length, 0, -config.silent_length_decrement):
+        ranges = silence.detect_nonsilent(
             segment,
-            min_silence_len=config.min_silence_length,
-            silence_thresh=silence_threshold_db,
+            min_silence_len=silent_length,
+            silence_thresh=segment.dBFS + config.silence_threshold_db,
             seek_step=config.seek_step,
         )
 
-        if len(non_silent_ranges) > 0:
+        ranges = [(r[0] + start_ms, r[1] + start_ms) for r in ranges if r[1] < end_ms - start_ms]
+
+        if len(ranges) > 0:
+            non_silent_ranges = ranges
             break
 
-        silence_threshold_db += config.db_increment
+    if len(non_silent_ranges) == 0:
+        non_silent_ranges = [(start_ms, end_ms)]
 
     non_silent_ranges = _filter_ranges(non_silent_ranges, config.max_silence_length)
-    
+
     if len(non_silent_ranges) > 0:
-        start_ms, end_ms = non_silent_ranges[0][0] + start_ms, non_silent_ranges[-1][1] + start_ms
+        start_ms, end_ms = non_silent_ranges[0][0], non_silent_ranges[-1][1]
         return (start_ms, end_ms)
 
     return None

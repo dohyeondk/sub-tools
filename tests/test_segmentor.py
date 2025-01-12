@@ -23,21 +23,25 @@ def test_segment_audio(sample_audio):
 
 def test_get_segment_ranges(sample_audio):
     config = SegmentConfig(
-        silence_threshold_db=-80,
+        max_silence_length=2_000,
+        silence_threshold_db=-64,
+        seek_step=10,
     )
     
     ranges = _get_segment_ranges(sample_audio, 10_000, config)
     assert len(ranges) == 6
     assert ranges[0][0] == 0
     assert ranges[0][1] == 8_000
-    assert 49_900 <= ranges[-1][0] <= 50_100
-    assert 57_900 <= ranges[-1][1] <= 58_100
+    assert ranges[-2][0] == 40_000
+    assert ranges[-2][1] == 48_000
+    assert ranges[-1][0] == 58_000
+    assert ranges[-1][1] == 66_000
 
 
 def test_find_split_range(sample_audio):
     config = SegmentConfig(
         max_silence_length=500,
-        silence_threshold_db=-80,
+        silence_threshold_db=-64,
         seek_step=10,
     )
     
