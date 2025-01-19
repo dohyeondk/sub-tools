@@ -71,20 +71,21 @@ async def _transcribe_item(
 
                 try:
                     subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
+                except Exception as e:
+                    if debug:
+                        write_log(f"{language_code}_{offset}", "API Error", e, language, offset, directory=f"./{config.directory}")
+                    await asyncio.sleep(config.sleep_for_rate_limit)
+                    continue
+
+                try:
                     validate_subtitles(subtitles, duration_ms)
                     if debug:
-                        write_log("Valid", language, offset, subtitles, directory=f"./{config.directory}")
+                        write_log(f"{language_code}_{offset}", "Valid", language, offset, subtitles, directory=f"./{config.directory}")
                     serialize_subtitles(subtitles, language_code, int(offset), config.directory)
-                    break
-
-                except RateLimitExceededError:
+                    break # Happy path
+                except Exception as e:
                     if debug:
-                        write_log("Rate limit exceeded", language, offset, subtitles or "no subtitles", directory=f"./{config.directory}")
-                    await asyncio.sleep(config.sleep_for_rate_limit)
-
-                except (SubtitleValidationError, Exception) as e:
-                    if debug:
-                        write_log("Invalid", e, language, offset, subtitles or "no subtitles", directory=f"./{config.directory}")
+                        write_log(f"{language_code}_{offset}", "Invalid", e, language, offset, subtitles or "no subtitles", directory=f"./{config.directory}")
                     await asyncio.sleep(min(2**attempt, 60))
 
         except Exception as e:

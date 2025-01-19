@@ -3,7 +3,7 @@ import re
 from typing import Union
 from google import genai
 from google.genai import types
-from google.genai.errors import ClientError, ServerError
+from google.genai.errors import ClientError
 
 class RateLimitExceededError(Exception):
     """
@@ -47,9 +47,10 @@ async def audio_to_subtitles(
     CRITICAL REQUIREMENTS:
     1. You MUST output ONLY the SRT content in {language}, with no additional text or markdown.
     2. Every timestamp MUST be in valid SRT format: 00:00:00,000 --> 00:00:00,000.
-    3. Each segment should be 1-2 lines and maximum 5 seconds. Refer to the example SRT file for reference.
+       - If not, try to fix it.
+    3. Each segment should be 1-2 lines and maximum 5 seconds. Refer to the example SRT file for reference in terms of the size of the segments.
        - Do not just decrease the end timestamp to fit within 5 seconds without splitting the text.
-       - When you split a sentence into multiple segments, make sure the timestamps are correct.
+       - When needed, split a sentence into multiple segments, and make sure the timestamps are correct.
     4. Every subtitle entry MUST have:
        - A sequential number
        - A timestamp line
@@ -57,6 +58,7 @@ async def audio_to_subtitles(
        - A blank line between entries.
     5. The SRT file MUST cover the entire input audio file without missing any content.
     6. The SRT file MUST be in the target language.
+    7. If any of the above requirements are not met, you MUST retry the whole process.
 
     Timing Guidelines:
     - Ensure no timestamp overlaps.
@@ -492,13 +494,13 @@ async def audio_to_subtitles(
         text = _fix_invalid_timestamp(text)
         return text
     
-    except ServerError as e:
-        print(f"Error: {str(e)}")
-        return None
-
     except ClientError as e:
         if e.code == 429:
             raise RateLimitExceededError
+        print(f"Error: {str(e)}")
+        return None
+
+    except Exception as e:
         print(f"Error: {str(e)}")
         return None
 
