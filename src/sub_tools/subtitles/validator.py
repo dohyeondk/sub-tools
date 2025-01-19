@@ -13,7 +13,7 @@ class ValidateConfig:
     max_valid_duration: int = 20_000  # Maximum allowed duration for any single subtitle (ms)
     begin_gap_threshold: int = 5_000  # Maximum allowed gap at the beginning (ms)
     end_gap_threshold: int = 10_000  # Maximum allowed gap at the end (ms)
-    inter_item_gap_threshold: int = 5_000  # Maximum allowed gap between consecutive subtitles (ms)
+    inter_item_gap_threshold: int = 6_000  # Maximum allowed gap between consecutive subtitles (ms)
     min_subtitles: int = 1  # Minimum number of subtitles
 
 
