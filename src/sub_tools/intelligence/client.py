@@ -62,7 +62,7 @@ async def audio_to_subtitles(
 
     Timing Guidelines:
     - Ensure no timestamp overlaps.
-    - Always use full timestamp format (00:00:00,000).
+    - Always use full timestamp format (hh:mm:ss,ms).
     - Ensure the timing aligns closely with the spoken words for synchronization. 
     - Make sure the subtitles cover the entire audio file.
 
