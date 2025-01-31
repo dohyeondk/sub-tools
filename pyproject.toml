@@ -1,6 +1,6 @@
 [project]
 name = "sub-tools"
-version = "0.4.5"
+version = "0.4.6"
 description = "A robust Python toolkit powered by Google's Gemini API for converting video content into accurate, multilingual subtitles."
 readme = "README.md"
 requires-python = ">=3.9"
