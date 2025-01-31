@@ -105,7 +105,7 @@ async def audio_to_subtitles(
 
     try:
         response = await client.aio.models.generate_content(
-            model="gemini-2.0-flash-thinking-exp-1219",
+            model="gemini-2.0-flash-thinking-exp-01-21",
             contents=[
                 types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"),
             ],
