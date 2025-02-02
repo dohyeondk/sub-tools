@@ -3,7 +3,7 @@ name = "sub-tools"
 version = "0.4.6"
 description = "A robust Python toolkit powered by Google's Gemini API for converting video content into accurate, multilingual subtitles."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "audioop-lts>=0.2.1; python_version >= '3.13'",
     "google-genai>=0.3.0",
