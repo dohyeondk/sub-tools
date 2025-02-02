@@ -12,6 +12,7 @@ dependencies = [
     "pysrt>=1.1.2",
     "pytest>=8.3.4",
     "silero-vad>=5.1.2",
+    "soundfile>=0.13.1",
 ]
 
 [project.scripts]
