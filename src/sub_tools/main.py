@@ -26,7 +26,12 @@ def main():
         if "segment" in parsed.tasks:
             segment_audio(parsed.audio_file, parsed.audio_segment_prefix, parsed.audio_segment_format, parsed.audio_segment_length, parsed.overwrite)
         if "transcribe" in parsed.tasks:
-            transcribe(parsed)
+            if parsed.gemini_api_key and parsed.gemini_api_key.strip():
+                transcribe(parsed)
+            else:
+                print("Error: No Gemini API Key provided")
+                parsed.func()
+                exit(1)
         if "combine" in parsed.tasks:
             combine_subtitles(parsed.languages, parsed.audio_segment_prefix, parsed.audio_segment_format)
         print("Done!")
