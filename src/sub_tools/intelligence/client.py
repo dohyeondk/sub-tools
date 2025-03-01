@@ -122,11 +122,9 @@ async def audio_to_subtitles(
     except ClientError as e:
         if e.code == 429:
             raise RateLimitExceededError
-        print(f"Error: {str(e)}")
         return None
 
     except Exception as e:
-        print(f"Error: {str(e)}")
         return None
 
 
