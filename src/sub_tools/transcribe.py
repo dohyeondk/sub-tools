@@ -1,6 +1,7 @@
 import asyncio
-
 from dataclasses import dataclass
+from google.genai.errors import ClientError
+
 from .intelligence.client import audio_to_subtitles, upload_file, delete_file, RateLimitExceededError
 from .media.info import get_duration
 from .subtitles.serializer import serialize_subtitles
@@ -17,7 +18,6 @@ semaphore = asyncio.Semaphore(max_concurrent_tasks)
 @dataclass
 class TranscribeConfig:
     directory: str = "tmp"
-    sleep_for_rate_limit: int = 60
 
 
 def transcribe(parsed, config: TranscribeConfig = TranscribeConfig()) -> None:
@@ -71,26 +71,45 @@ async def _transcribe_item(
 
                 try:
                     subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
-                except Exception as e:
-                    if debug:
-                        write_log(f"{language_code}_{offset}", "API Error", e, language, offset, directory=f"./{config.directory}")
-                    await asyncio.sleep(config.sleep_for_rate_limit)
-                    continue
 
-                try:
-                    validate_subtitles(subtitles, duration_ms)
+                    try:
+                        validate_subtitles(subtitles, duration_ms)
+
+                        if debug:
+                            write_log(f"{language_code}_{offset}", "Valid", language, offset, subtitles, directory=f"./{config.directory}")
+                        serialize_subtitles(subtitles, language_code, int(offset), config.directory)
+                        break  # Happy path
+
+                    except SubtitleValidationError as e:
+                        if debug:
+                            write_log(f"{language_code}_{offset}", "Invalid", e, language, offset, subtitles, directory=f"./{config.directory}")
+
+                        # Use consistent backoff strategy
+                        wait_time = min(2**attempt, 60)
+                        await asyncio.sleep(wait_time)
+
+                except RateLimitExceededError:
                     if debug:
-                        write_log(f"{language_code}_{offset}", "Valid", language, offset, subtitles, directory=f"./{config.directory}")
-                    serialize_subtitles(subtitles, language_code, int(offset), config.directory)
-                    break # Happy path
+                        write_log(f"{language_code}_{offset}", "Rate Limit Exceeded", "API rate limit exceeded", language, offset, directory=f"./{config.directory}")
+                except ClientError as e:
+                    if debug:
+                        write_log(f"{language_code}_{offset}", "API Error", f"ClientError: {e}", language, offset, directory=f"./{config.directory}")
                 except Exception as e:
                     if debug:
-                        write_log(f"{language_code}_{offset}", "Invalid", e, language, offset, subtitles or "no subtitles", directory=f"./{config.directory}")
-                    await asyncio.sleep(min(2**attempt, 60))
+                        write_log(f"{language_code}_{offset}", "Unexpected Error", f"Exception: {e}", language, offset, directory=f"./{config.directory}")
+
+                # Use consistent backoff strategy
+                wait_time = min(2**attempt, 60)
+                await asyncio.sleep(wait_time)
 
         except Exception as e:
             if debug:
-                print(f"Error: {str(e)}")
+                print(f"Error in transcription process: {str(e)}")
 
         finally:
-            await delete_file(api_key, file)
+            if file:
+                try:
+                    await delete_file(api_key, file)
+                except Exception as e:
+                    if debug:
+                        print(f"Failed to delete file: {str(e)}")
