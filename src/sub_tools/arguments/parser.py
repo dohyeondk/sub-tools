@@ -97,7 +97,7 @@ def build_parser() -> ArgumentParser:
 
     parser.add_argument(
         "--audio-segment-format",
-        default="wav",
+        default="mp3",
         help="Format for audio segments (default: %(default)s).",
     )
 
