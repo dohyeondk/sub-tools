@@ -1,7 +1,9 @@
 import asyncio
 from dataclasses import dataclass
+
 from google.genai import types
 from google.genai.errors import ClientError
+from rich.progress import Progress
 
 from .intelligence.client import audio_to_subtitles, upload_file, delete_file, RateLimitExceededError
 from .media.info import get_duration
@@ -11,6 +13,7 @@ from .system.directory import paths_with_offsets
 from .system.language import get_language_name
 from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
+from .system.console import info, error, log, status
 
 
 rate_limiter = RateLimiter(rate_limit=10, period=60)
@@ -22,45 +25,59 @@ class TranscribeConfig:
 
 
 def transcribe(parsed, config: TranscribeConfig = TranscribeConfig()) -> None:
-    print("Transcribing...")
     asyncio.run(_transcribe(parsed, config))
 
 
 async def _transcribe(parsed, config: TranscribeConfig) -> None:
-    tasks = []
-    files = []
+    with status("Uploading files..."):
+        tasks = []
 
-    for path, offset in paths_with_offsets(parsed.audio_segment_prefix, parsed.audio_segment_format, f"./{config.directory}"):
-        file_path = f"{config.directory}/{path}"
-        print(f"Upload file: {file_path}")
-        file = await upload_file(parsed.gemini_api_key, file_path)
-        files.append(file)
-        duration_ms = get_duration(file_path) * 1000
-
-        for language_code in parsed.languages:
-            task = asyncio.create_task(
-                _transcribe_item(
-                    file,
-                    duration_ms,
-                    parsed.audio_segment_format,
-                    offset,
-                    language_code,
-                    parsed.gemini_api_key,
-                    parsed.retry,
-                    parsed.debug,
-                    config,
-                )
-            )
+        path_offset_list = paths_with_offsets(parsed.audio_segment_prefix, parsed.audio_segment_format, f"./{config.directory}")
+        for path, offset in path_offset_list:
+            async def run(path, offset):
+                file_path = f"{config.directory}/{path}"
+                file = await upload_file(parsed.gemini_api_key, file_path)
+                duration_ms = get_duration(file_path) * 1000
+                return (offset, file, duration_ms)
+            task = asyncio.create_task(run(path, offset))
             tasks.append(task)
 
-    await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
+        offset_file_duration_dict = {offset: (file, duration_ms) for offset, file, duration_ms in results}
+        offset_file_duration_list = sorted(offset_file_duration_dict.items(), key=lambda item: int(item[0]))
 
-    for file in files:
+    info("Transcribing files...")
+    tasks = []
+
+    with Progress() as progress:
+        for language_code in parsed.languages:
+            language_name = get_language_name(language_code)
+            progress_task = progress.add_task(language_name, total=len(offset_file_duration_list))
+
+            for offset, (file, duration_ms) in offset_file_duration_list:
+                async def run(file, duration_ms, offset, language_code, progress_task):
+                    await _transcribe_item(
+                        file,
+                        int(duration_ms),
+                        parsed.audio_segment_format,
+                        offset,
+                        language_code,
+                        parsed.gemini_api_key,
+                        parsed.retry,
+                        parsed.debug,
+                        config,
+                    )
+                    progress.update(progress_task, advance=1)
+                task = asyncio.create_task(run(file, duration_ms, offset, language_code, progress_task))
+                tasks.append(task)
+
+        await asyncio.gather(*tasks)
+
+    for _, (file, _) in offset_file_duration_list:
         try:
             await delete_file(parsed.gemini_api_key, file)
         except Exception as e:
-            if parsed.debug:
-                print(f"Failed to delete file: {str(e)}")
+            error(f"Failed to delete file: {str(e)}")
 
 
 async def _transcribe_item(
@@ -80,7 +97,6 @@ async def _transcribe_item(
         for attempt in range(retry):
             # Apply rate limiting for the audio_to_subtitles call
             await rate_limiter.acquire()
-            print(f"Transcribe attempt {attempt + 1}/{retry} for audio at {offset} to {language}")
 
             try:
                 subtitles = await audio_to_subtitles(api_key, file, audio_segment_format, language)
@@ -117,4 +133,4 @@ async def _transcribe_item(
 
     except Exception as e:
         if debug:
-            print(f"Error in transcription process: {str(e)}")
+            error(f"Error in transcription process: {str(e)}")

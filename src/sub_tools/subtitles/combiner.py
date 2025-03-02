@@ -1,8 +1,9 @@
 import pysrt
-
 from dataclasses import dataclass
-from sub_tools.system.directory import paths_with_offsets
-from sub_tools.system.language import get_language_name
+
+from ..system.directory import paths_with_offsets
+from ..system.language import get_language_name
+from ..system.console import error, status
 
 
 @dataclass
@@ -19,9 +20,9 @@ def combine_subtitles(
     """
     Combines subtitles for a list of languages.
     """
-    print("Combining subtitles...")
-    for language_code in language_codes:
-        combine_subtitles_for_language(language_code, audio_segment_prefix, audio_segment_format, config)
+    with status("Combining subtitles..."):
+        for language_code in language_codes:
+            combine_subtitles_for_language(language_code, audio_segment_prefix, audio_segment_format, config)
 
 
 def combine_subtitles_for_language(
@@ -41,8 +42,8 @@ def combine_subtitles_for_language(
 
     if subtitles_count < audio_count:
         language = get_language_name(language_code)
-        print(
-            f"Skipping language {language} because there are not enough subtitles.",
+        error(
+            f"Skipping language {language} because there are not enough subtitles."
             f"Expected {audio_count}, found {subtitles_count}."
         )
         return

@@ -2,6 +2,7 @@
 import asyncio
 import time
 
+
 class RateLimiter:
     def __init__(self, rate_limit: float, period: float):
         """
@@ -30,7 +31,6 @@ class RateLimiter:
                 wait_time = self.request_times[0] + self.period - current_time
 
                 if wait_time > 0:
-                    print(f"Rate limit reached. Waiting {wait_time:.2f} seconds...")
                     await asyncio.sleep(wait_time)
 
                     # Recalculate current time after waiting
