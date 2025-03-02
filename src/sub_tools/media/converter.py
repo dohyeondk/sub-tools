@@ -1,13 +1,13 @@
 import os
 import subprocess
-import ffmpeg
-from ..system.console import info, warning, error
-from rich.progress import Progress
+
+from ..system.console import warning, status
 
 
 def hls_to_media(
     hls_url: str,
     output_file: str,
+    audio_only: bool = False,
     overwrite: bool = False,
 ) -> None:
     """
@@ -17,28 +17,13 @@ def hls_to_media(
         warning(f"File {output_file} already exists. Skipping download...")
         return
 
-    probe = ffmpeg.probe(hls_url)
-    total_duration = float(probe['format']['duration'])
+    cmd = ["ffmpeg", "-y", "-i", hls_url]
+    if audio_only:
+        cmd.extend(["-vn", "-c:a", "libmp3lame"])
+    cmd.append(output_file)
 
-    with Progress() as progress:
-        task = progress.add_task("Downloading...", total=100)
-
-        def on_progress(progress_data):
-            if 'out_time_ms' in progress_data:
-                time_ms = int(progress_data['out_time_ms'])
-                current_time = time_ms / 1_000_000
-                percent_complete = min(100, (current_time / total_duration * 100))
-                progress.update(task, completed=percent_complete)
-
-        try:
-            ffmpeg.input(hls_url).output(output_file, c='copy').run(
-                quiet=True,
-                overwrite_output=True,
-                progress=on_progress
-            )
-        except ffmpeg.Error as e:
-            error(f"Error: {e.stderr.decode()}")
-            exit(1)
+    with status("Downloading media..."):
+        subprocess.run(cmd, check=True, capture_output=True)
 
 
 def video_to_audio(
@@ -53,19 +38,16 @@ def video_to_audio(
         warning(f"Audio file {audio_file} already exists. Skipping conversion...")
         return
 
-    info(f"Converting {video_file} to {audio_file}...")
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", video_file,
+        "-vn",
+        "-c:a", "libmp3lame",
+        audio_file,
+    ]
 
-    subprocess.run(
-        [
-            "ffmpeg", "-y", 
-            "-i", video_file, 
-            "-vn", 
-            "-c:a", "libmp3lame", 
-            audio_file,
-        ],
-        check=True,
-        capture_output=True,
-    )
+    with status("Converting video to audio..."):
+        subprocess.run(cmd, check=True, capture_output=True)
 
 
 def media_to_signature(
@@ -86,15 +68,12 @@ def media_to_signature(
         warning("Skipping signature generation: Shazam CLI not available.")
         return
 
-    info(f"Generating signature for {media_file}...")
+    cmd = [
+        "shazam",
+        "signature",
+        "--input", media_file,
+        "--output", signature_file,
+    ]
 
-    subprocess.run(
-        [
-            "shazam",
-            "signature",
-            "--input", media_file,
-            "--output", signature_file,
-        ],
-        check=True,
-        capture_output=True,
-    )
+    with status("Generating signature..."):
+        subprocess.run(cmd, check=True, capture_output=True)

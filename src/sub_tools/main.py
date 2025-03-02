@@ -13,38 +13,49 @@ def main():
 
     try:
         change_directory(parsed.output_path)
+        step = 1
 
         if "video" in parsed.tasks:
             if not parsed.hls_url:
                 parsed.func()
                 raise Exception("No HLS URL provided")
-            header("Download Video")
-            hls_to_media(parsed.hls_url, parsed.video_file, parsed.overwrite)
+            header(f"{step}. Download Video")
+            hls_to_media(parsed.hls_url, parsed.video_file, False, parsed.overwrite)
+            success("Done!")
+            step += 1
 
         if "audio" in parsed.tasks:
-            header("Convert Video to Audio")
+            header(f"{step}. Video to Audio")
             video_to_audio(parsed.video_file, parsed.audio_file, parsed.overwrite)
+            success("Done!")
+            step += 1
 
         if "signature" in parsed.tasks:
-            header("Convert Audio to Signature")
+            header(f"{step}. Audio to Signature")
             media_to_signature(parsed.audio_file, parsed.signature_file, parsed.overwrite)
+            success("Done!")
+            step += 1
 
         if "segment" in parsed.tasks:
-            header("Segment Audio")
+            header(f"{step}. Segment Audio")
             segment_audio(parsed.audio_file, parsed.audio_segment_prefix, parsed.audio_segment_format, parsed.audio_segment_length, parsed.overwrite)
+            success("Done!")
+            step += 1
 
         if "transcribe" in parsed.tasks:
             if not (parsed.gemini_api_key and parsed.gemini_api_key.strip()):
                 parsed.func()
                 raise Exception("No Gemini API Key provided")
-            header("Transcribe Audio")
+            header(f"{step}. Transcribe Audio")
             transcribe(parsed)
+            success("Done!")
+            step += 1
 
         if "combine" in parsed.tasks:
-            header("Combine Subtitles")
+            header(f"{step}. Combine Subtitles")
             combine_subtitles(parsed.languages, parsed.audio_segment_prefix, parsed.audio_segment_format)
-
-        success("Done!")
+            success("Done!")
+            step += 1
 
     except Exception as e:
         error(f"Error: {str(e)}")

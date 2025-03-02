@@ -1,7 +1,10 @@
+from contextlib import contextmanager
+
 from rich.console import Console
 from rich.theme import Theme
 from rich.panel import Panel
 from rich import print
+
 
 theme = Theme({
     "info": "bold cyan",
@@ -32,8 +35,7 @@ def error(message: str) -> None:
 def log(text):
     console.log(text)
 
-def with_progress() -> list:
-    results = []
-
-    with create_progress() as progress:
-        task = progress.add_task(desctiption, )
+@contextmanager
+def status(title):
+    with console.status(title):
+        yield

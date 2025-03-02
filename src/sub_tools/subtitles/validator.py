@@ -1,6 +1,6 @@
 import pysrt
-
 from dataclasses import dataclass
+
 from pysrt import SubRipFile
 
 
