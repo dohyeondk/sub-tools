@@ -1,28 +1,44 @@
 import os
 import subprocess
+import ffmpeg
+from ..system.console import info, warning, error
+from rich.progress import Progress
 
 
 def hls_to_media(
     hls_url: str,
     output_file: str,
-    audio_only: bool = False,
     overwrite: bool = False,
 ) -> None:
     """
     Downloads media from an HLS URL and saves it as video or audio.
     """
     if os.path.exists(output_file) and not overwrite:
-        print(f"File {output_file} already exists. Skipping download...")
+        warning(f"File {output_file} already exists. Skipping download...")
         return
 
-    print(f"Downloading {'audio' if audio_only else 'video'} from {hls_url}...")
+    probe = ffmpeg.probe(hls_url)
+    total_duration = float(probe['format']['duration'])
 
-    cmd = ["ffmpeg", "-y", "-i", hls_url]
-    if audio_only:
-        cmd.extend(["-vn", "-c:a", "libmp3lame"])
-    cmd.append(output_file)
+    with Progress() as progress:
+        task = progress.add_task("Downloading...", total=100)
 
-    subprocess.run(cmd, check=True, capture_output=True)
+        def on_progress(progress_data):
+            if 'out_time_ms' in progress_data:
+                time_ms = int(progress_data['out_time_ms'])
+                current_time = time_ms / 1_000_000
+                percent_complete = min(100, (current_time / total_duration * 100))
+                progress.update(task, completed=percent_complete)
+
+        try:
+            ffmpeg.input(hls_url).output(output_file, c='copy').run(
+                quiet=True,
+                overwrite_output=True,
+                progress=on_progress
+            )
+        except ffmpeg.Error as e:
+            error(f"Error: {e.stderr.decode()}")
+            exit(1)
 
 
 def video_to_audio(
@@ -34,10 +50,10 @@ def video_to_audio(
     Converts a video file to an audio file using ffmpeg.
     """
     if os.path.exists(audio_file) and not overwrite:
-        print(f"Audio file {audio_file} already exists. Skipping conversion...")
+        warning(f"Audio file {audio_file} already exists. Skipping conversion...")
         return
 
-    print(f"Converting {video_file} to {audio_file}...")
+    info(f"Converting {video_file} to {audio_file}...")
 
     subprocess.run(
         [
@@ -61,16 +77,16 @@ def media_to_signature(
     Generates a signature for the media file using the shazam CLI.
     """
     if os.path.exists(signature_file) and not overwrite:
-        print(f"Skipping signature generation: Signature file {signature_file} already exists.")
+        warning(f"Skipping signature generation: Signature file {signature_file} already exists.")
         return
     
     try:
         subprocess.run("shazam", capture_output=True, check=True)
     except (subprocess.SubprocessError, FileNotFoundError):
-        print("Skipping signature generation: Shazam CLI not available.")
+        warning("Skipping signature generation: Shazam CLI not available.")
         return
 
-    print(f"Generating signature for {media_file}...")
+    info(f"Generating signature for {media_file}...")
 
     subprocess.run(
         [
