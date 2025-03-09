@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "audioop-lts>=0.2.1; python_version >= '3.13'",
-    "google-genai>=0.3.0",
+    "openai>=1.65.4",
     "pycountry>=24.6.1",
     "pydub>=0.25.1",
     "pysrt>=1.1.2",

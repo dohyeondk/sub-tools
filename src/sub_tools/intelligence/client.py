@@ -1,9 +1,9 @@
 import re
+import base64
 from typing import Union
-
-from google import genai
-from google.genai import types
-from google.genai.errors import ClientError
+from openai import AsyncOpenAI
+from openai.types import FileObject
+from openai.types.file_deleted import FileDeleted
 
 
 class RateLimitExceededError(Exception):
@@ -13,32 +13,19 @@ class RateLimitExceededError(Exception):
     pass
 
 
-async def upload_file(api_key: str, path: str) -> types.File:
-    """
-    Uploads a file to the Google GenAI API.
-    """
-    client = genai.Client(api_key=api_key)
-    return await client.aio.files.upload(path=path)
-
-
-async def delete_file(api_key: str, file: types.File) -> types.DeleteFileResponse:
-    """
-    Deletes a file from the Google GenAI API.
-    """
-    client = genai.Client(api_key=api_key)
-    return await client.aio.files.delete(name=file.name)
-
-
 async def audio_to_subtitles(
     api_key: str,
-    file: types.File,
+    audio_path: str,
     audio_format: str,
     language: str,
 ) -> Union[str, None]:
     """
     Converts an audio file to subtitles.
     """
-    client = genai.Client(api_key=api_key)
+    client = AsyncOpenAI(
+        api_key=api_key,
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    )
 
     system_instruction = f"""
     You're a professional transcriber and translator working specifically with {language} as the target language. 
@@ -104,28 +91,39 @@ async def audio_to_subtitles(
     hey, what would I like to be different in my life in 2025?
     """
 
+    with open(audio_path, "rb") as audio_file:
+        base64_audio = base64.b64encode(audio_file.read()).decode('utf-8')
+
     try:
-        response = await client.aio.models.generate_content(
+        response = await client.chat.completions.create(
             model="gemini-2.0-flash-thinking-exp-01-21",
-            contents=[
-                types.Part.from_uri(file_uri=file.uri, mime_type=f"audio/{audio_format}"),
-            ],
-            config=types.GenerateContentConfig(
-                system_instruction=[system_instruction],
-                candidate_count=1,
-            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_instruction
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_audio",
+                            "input_audio": {
+                                "data": base64_audio,
+                                "format": audio_format
+                            }
+                        }
+                    ]
+                }
+            ]
         )
-        text = response.candidates[0].content.parts[-1].text
+        text = response.choices[0].message.content
         text = _remove_unneeded_characters(text)
         text = _fix_invalid_timestamp(text)
         return text
     
-    except ClientError as e:
-        if e.code == 429:
-            raise RateLimitExceededError
-        return None
-
     except Exception as e:
+        if "rate_limit_exceeded" in str(e).lower():
+            raise RateLimitExceededError
         return None
 
 
