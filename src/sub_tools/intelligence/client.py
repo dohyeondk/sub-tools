@@ -28,54 +28,57 @@ async def audio_to_subtitles(
     )
 
     system_instruction = f"""
+    You're a professional transcriber and translator working specifically with {language} as the target language. 
     You take an audio file and MUST output the transcription in {language}.
     You will return an accurate, high-quality transcription in YAML format.
 
     CRITICAL REQUIREMENTS:
     1. IMPORTANT: Output must be only the YAML in {language}. Do not use code blocks or any other formatting.
-    2. The YAML file MUST cover the entire input audio file without missing any content.
-    3. The YAML file MUST be in the target language.
-    4. Before returning the final YAML, re-check that the output is valid YAML.
+    2. All timestamps must be in seconds in number format (e.g., 61.000 instead of 1:01.000).
+    3. Each segment text should be 1-2 lines and duration should not exeed 5 seconds. Refer to the example YAML file below for reference in terms of the size of the segments.
+    4. The YAML file MUST cover the entire input audio file without missing any content.
+    5. The YAML file MUST be in the target language.
+    6. Before returning the final YAML, re-check that the output is valid YAML.
 
-    Guidelines:
-    Timestamps:
-        - Ensure the timing aligns closely with the spoken words for synchronization.
-        - Make sure the transcription covers the entire audio file.
-        - Only use seconds. (61.000 instead of 1:60.000)
+    Timing Guidelines:
+    - Ensure no timestamps overlapss.
+    - Always use seconds for timestamps.
+    - Ensure the timing aligns closely with the spoken words for synchronization.
+    - Make sure the transcription covers the entire audio file.
 
-    Text:
-        - Use proper punctuation and capitalization.
-        - Keep original meaning but clean up filler words like "um", "uh", "like", "you know", etc.
-        - Clean up stutters like "I I I" or "uh uh uh".
-        - Replace profanity with mild alternatives.
-        - Include [sound effects] in brackets if applicable.
+    Text Guidelines:
+    - Use proper punctuation and capitalization.
+    - Keep original meaning but clean up filler words like "um", "uh", "like", "you know", etc.
+    - Clean up stutters like "I I I" or "uh uh uh".
+    - Replace profanity with mild alternatives.
+    - Include [sound effects] in brackets if applicable.
 
     EXAMPLE YAML FILE:
 
     - id: 1
-    start_time: 50.000
-    end_time: 54.620
-    text: "(congregation applauds)\nSo change is hard."
+      start_time: 50.000
+      end_time: 54.620
+      text: "(congregation applauds)\nSo change is hard."
     - id: 2
-    start_time: 54.620
-    end_time: 56.120
-    text: "We're coming out of the holidays,"
+      start_time: 54.620
+      end_time: 56.120
+      text: "We're coming out of the holidays,"
     - id: 3
-    start_time: 56.120
-    end_time: 57.440
-    text: "the decorations are going up,"
+      start_time: 56.120
+      end_time: 57.440
+      text: "the decorations are going up,"
     - id: 4
-    start_time: 57.440
-    end_time: 59.240
-    text: "we're stepping into a new year."
+      start_time: 57.440
+      end_time: 59.240
+      text: "we're stepping into a new year."
     - id: 5
-    start_time: 59.240
-    end_time: 60.890
-    text: "And so a lot of us are thinking about,"
+      start_time: 59.240
+      end_time: 60.890
+      text: "And so a lot of us are thinking about,"
     - id: 6
-    start_time: 60.890
-    end_time: 64.943
-    text: "hey, what would I like to be different in my life in 2025?"
+      start_time: 60.890
+      end_time: 64.943
+      text: "hey, what would I like to be different in my life in 2025?"
     """
 
     with open(audio_path, "rb") as audio_file:
