@@ -1,7 +1,7 @@
 import re
 import base64
 from typing import Union
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 
 
 class RateLimitExceededError(Exception):
@@ -13,7 +13,6 @@ class RateLimitExceededError(Exception):
 
 async def audio_to_subtitles(
     api_key: str,
-    base_url: Union[str, None],
     model: str,
     audio_path: str,
     audio_format: str,
@@ -24,7 +23,7 @@ async def audio_to_subtitles(
     """
     client = AsyncOpenAI(
         api_key=api_key,
-        base_url=base_url,
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
     )
 
     system_instruction = f"""
@@ -121,7 +120,7 @@ async def audio_to_subtitles(
         text = _fix_invalid_timestamp(text)
         return text
     
-    except openai.RateLimitError as e:
+    except RateLimitError as e:
         raise RateLimitExceededError
     except Exception as e:
         return None
