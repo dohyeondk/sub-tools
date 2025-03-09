@@ -1,4 +1,5 @@
-import re
+import yaml
+import pysrt
 import base64
 from typing import Union
 from openai import AsyncOpenAI, RateLimitError
@@ -27,67 +28,54 @@ async def audio_to_subtitles(
     )
 
     system_instruction = f"""
-    You're a professional transcriber and translator working specifically with {language} as the target language. 
     You take an audio file and MUST output the transcription in {language}.
-    You will return an accurate, high-quality SubRip Subtitle (SRT) file.
-    
+    You will return an accurate, high-quality transcription in YAML format.
+
     CRITICAL REQUIREMENTS:
-    1. IMPORTANT: Output must be only the SRT in {language}. Do not use code blocks or any other formatting.
-    2. All timestamps must be in 00:00:00,000 --> 00:00:00,000 format (hh:mm:ss,ms). No deviation is allowed.
-    3. Each segment should be 1-2 lines and maximum 5 seconds. Refer to the example SRT file for reference in terms of the size of the segments.
-       - Do not just decrease the end timestamp to fit within 5 seconds without splitting the text.
-       - When needed, split a sentence into multiple segments, and make sure the timestamps are correct.
-    4. Every subtitle entry MUST have:
-       - A sequential number
-       - A timestamp line
-       - 1-2 lines of text
-       - A blank line between entries.
-    5. The SRT file MUST cover the entire input audio file without missing any content.
-    6. The SRT file MUST be in the target language.
-    7. Before returning the final SRT, re-check that:
-       - All lines follow the SRT numbering and timestamp format strictly.
-       - There are no overlaps, and each timestamp is valid and sequential.
-       - There are no extraneous characters or missing commas for the timestamps.
-    
-    Timing Guidelines:
-    - Ensure no timestamp overlaps.
-    - Always use full timestamp format (hh:mm:ss,ms).
-    - Ensure the timing aligns closely with the spoken words for synchronization. 
-    - Make sure the subtitles cover the entire audio file.
+    1. IMPORTANT: Output must be only the YAML in {language}. Do not use code blocks or any other formatting.
+    2. The YAML file MUST cover the entire input audio file without missing any content.
+    3. The YAML file MUST be in the target language.
+    4. Before returning the final YAML, re-check that the output is valid YAML.
 
-    Text Guidelines:
-    - Use proper punctuation and capitalization.
-    - Keep original meaning but clean up filler words like "um", "uh", "like", "you know", etc.
-    - Clean up stutters like "I I I" or "uh uh uh".
-    - Replace profanity with mild alternatives.
-    - Include [sound effects] in brackets if applicable.
+    Guidelines:
+    Timestamps:
+        - Ensure the timing aligns closely with the spoken words for synchronization.
+        - Make sure the transcription covers the entire audio file.
+        - Only use seconds. (61.000 instead of 1:60.000)
 
-    EXAMPLE SRT FILE:
+    Text:
+        - Use proper punctuation and capitalization.
+        - Keep original meaning but clean up filler words like "um", "uh", "like", "you know", etc.
+        - Clean up stutters like "I I I" or "uh uh uh".
+        - Replace profanity with mild alternatives.
+        - Include [sound effects] in brackets if applicable.
 
-    1
-    00:00:00,000 --> 00:00:04,620
-    (congregation applauds)
-    So change is hard.
-    
-    2
-    00:00:04,620 --> 00:00:06,120
-    We're coming out of the holidays,
-    
-    3
-    00:00:06,120 --> 00:00:07,440
-    the decorations are going up,
-    
-    4
-    00:00:07,440 --> 00:00:09,240
-    we're stepping into a new year.
-    
-    5
-    00:00:09,240 --> 00:00:10,890
-    And so a lot of us are thinking about,
-    
-    6
-    00:00:10,890 --> 00:00:14,943
-    hey, what would I like to be different in my life in 2025?
+    EXAMPLE YAML FILE:
+
+    - id: 1
+    start_time: 50.000
+    end_time: 54.620
+    text: "(congregation applauds)\nSo change is hard."
+    - id: 2
+    start_time: 54.620
+    end_time: 56.120
+    text: "We're coming out of the holidays,"
+    - id: 3
+    start_time: 56.120
+    end_time: 57.440
+    text: "the decorations are going up,"
+    - id: 4
+    start_time: 57.440
+    end_time: 59.240
+    text: "we're stepping into a new year."
+    - id: 5
+    start_time: 59.240
+    end_time: 60.890
+    text: "And so a lot of us are thinking about,"
+    - id: 6
+    start_time: 60.890
+    end_time: 64.943
+    text: "hey, what would I like to be different in my life in 2025?"
     """
 
     with open(audio_path, "rb") as audio_file:
@@ -117,7 +105,7 @@ async def audio_to_subtitles(
         )
         text = response.choices[0].message.content
         text = _remove_unneeded_characters(text)
-        text = _fix_invalid_timestamp(text)
+        text = _yaml_to_srt(text)
         return text
     
     except RateLimitError as e:
@@ -127,9 +115,23 @@ async def audio_to_subtitles(
 
 
 def _remove_unneeded_characters(text: str) -> str:
-    return text.strip().strip("```").strip("srt")
+    return text.strip().strip("```").strip("srt").strip("yaml").strip()
 
+def _yaml_to_srt(text: str) -> str:
+    """
+    Convert YAML data to SRT format.
+    """
+    yaml_data = yaml.safe_load(text)
 
-def _fix_invalid_timestamp(text: str) -> str:
-    pattern = re.compile(r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE)
-    return pattern.sub(r"00:\1 --> 00:\2", text)
+    srt = ""
+
+    for item in yaml_data:
+        sub = pysrt.SubRipItem(
+            index=item['id'],
+            start=pysrt.SubRipTime(seconds=item['start_time']),
+            end=pysrt.SubRipTime(seconds=item['end_time']),
+            text=item['text']
+        )
+        srt += str(sub) + "\n"
+
+    return srt
