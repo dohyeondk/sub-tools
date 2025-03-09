@@ -12,7 +12,8 @@ from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
 from .system.console import info, error
 
-model = 'gemini-2.0-flash-thinking-exp-01-21'
+model = "gemini-2.0-flash-thinking-exp-01-21"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 rate_limit = 10
 
 rate_limiter = RateLimiter(rate_limit=rate_limit, period=60)
@@ -79,7 +80,7 @@ async def _transcribe_item(
             await rate_limiter.acquire()
 
             try:
-                subtitles = await audio_to_subtitles(api_key, model, audio_path, audio_segment_format, language)
+                subtitles = await audio_to_subtitles(api_key, base_url, model, audio_path, audio_segment_format, language)
 
                 try:
                     validate_subtitles(subtitles, duration_ms)

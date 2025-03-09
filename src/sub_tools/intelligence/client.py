@@ -13,6 +13,7 @@ class RateLimitExceededError(Exception):
 
 async def audio_to_subtitles(
     api_key: str,
+    base_url: Union[str, None],
     model: str,
     audio_path: str,
     audio_format: str,
@@ -23,7 +24,7 @@ async def audio_to_subtitles(
     """
     client = AsyncOpenAI(
         api_key=api_key,
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        base_url=base_url,
     )
 
     system_instruction = f"""
