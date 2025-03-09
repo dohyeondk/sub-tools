@@ -2,8 +2,6 @@ import re
 import base64
 from typing import Union
 from openai import AsyncOpenAI
-from openai.types import FileObject
-from openai.types.file_deleted import FileDeleted
 
 
 class RateLimitExceededError(Exception):
@@ -15,6 +13,7 @@ class RateLimitExceededError(Exception):
 
 async def audio_to_subtitles(
     api_key: str,
+    model: str,
     audio_path: str,
     audio_format: str,
     language: str,
@@ -96,7 +95,7 @@ async def audio_to_subtitles(
 
     try:
         response = await client.chat.completions.create(
-            model="gemini-2.0-flash-thinking-exp-01-21",
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -121,9 +120,9 @@ async def audio_to_subtitles(
         text = _fix_invalid_timestamp(text)
         return text
     
+    except openai.RateLimitError as e:
+        raise RateLimitExceededError
     except Exception as e:
-        if "rate_limit_exceeded" in str(e).lower():
-            raise RateLimitExceededError
         return None
 
 

@@ -10,10 +10,12 @@ from .system.directory import paths_with_offsets
 from .system.language import get_language_name
 from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
-from .system.console import info, error, log, status
+from .system.console import info, error
 
+model = 'gemini-2.0-flash-thinking-exp-01-21'
+rate_limit = 10
 
-rate_limiter = RateLimiter(rate_limit=10, period=60)
+rate_limiter = RateLimiter(rate_limit=rate_limit, period=60)
 
 
 @dataclass
@@ -37,10 +39,9 @@ async def _transcribe(parsed, config: TranscribeConfig) -> None:
             progress_task = progress.add_task(language_name, total=len(path_offset_list))
 
             for path, offset in path_offset_list:
-                audio_path = f"./{config.directory}/{path}"
-                duration_ms = get_duration(audio_path) * 1000
-
-                async def run(audio_path, duration_ms, offset, language_code, progress_task):
+                async def run(path, offset, language_code, progress_task):
+                    audio_path = f"./{config.directory}/{path}"
+                    duration_ms = get_duration(audio_path) * 1000
                     await _transcribe_item(
                         audio_path,
                         int(duration_ms),
@@ -53,7 +54,7 @@ async def _transcribe(parsed, config: TranscribeConfig) -> None:
                         config,
                     )
                     progress.update(progress_task, advance=1)
-                task = asyncio.create_task(run(audio_path, duration_ms, offset, language_code, progress_task))
+                task = asyncio.create_task(run(path, offset, language_code, progress_task))
                 tasks.append(task)
 
         await asyncio.gather(*tasks)
@@ -78,7 +79,7 @@ async def _transcribe_item(
             await rate_limiter.acquire()
 
             try:
-                subtitles = await audio_to_subtitles(api_key, audio_path, audio_segment_format, language)
+                subtitles = await audio_to_subtitles(api_key, model, audio_path, audio_segment_format, language)
 
                 try:
                     validate_subtitles(subtitles, duration_ms)
