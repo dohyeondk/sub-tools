@@ -31,6 +31,13 @@ export GEMINI_API_KEY={your_api_key}
 sub-tools --hls-url https://example.com/hls/video.m3u8 --languages en es fr
 ```
 
+### Build Docker
+
+```shell
+docker build -t sub-tools .
+docker run -v $(pwd)/output:/app/output sub-tools sub-tools --gemini-api-key GEMINI_API_KEY -i HLS_URL -l en
+```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
