@@ -12,7 +12,7 @@ from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
 from .system.console import info, error
 
-model = 'gemini-2.0-flash-thinking-exp-01-21'
+model = 'gemini-2.5-flash-preview-04-17'
 rate_limit = 10
 
 rate_limiter = RateLimiter(rate_limit=rate_limit, period=60)
