@@ -1,5 +1,20 @@
 from pysrt import SubRipFile
-from ..config.errors import ValidationError
+from typing import Type
+from ..config.errors import ValidationError, AppError
+
+
+def format_error_message(template: str, **kwargs) -> str:
+    """
+    Format an error message template with provided values.
+    
+    Args:
+        template: Message template with placeholders
+        **kwargs: Values to insert into template
+        
+    Returns:
+        Formatted error message
+    """
+    return template.format(**kwargs)
 
 
 def validate_threshold(value: int, threshold: int, message: str) -> None:
@@ -15,7 +30,7 @@ def validate_threshold(value: int, threshold: int, message: str) -> None:
         ValidationError: If validation fails
     """
     if value > threshold:
-        raise ValidationError(message.format(value=value, threshold=threshold))
+        raise ValidationError(format_error_message(message, value=value, threshold=threshold))
 
 
 def validate_min_count(items: list, min_count: int, message: str) -> None:
@@ -31,10 +46,10 @@ def validate_min_count(items: list, min_count: int, message: str) -> None:
         ValidationError: If validation fails
     """
     if len(items) < min_count:
-        raise ValidationError(message.format(found=len(items), min_count=min_count))
+        raise ValidationError(format_error_message(message, found=len(items), min_count=min_count))
 
 
-def parse_subtitles(content: str, error_class=ValidationError) -> SubRipFile:
+def parse_subtitles(content: str, error_class: Type[AppError] = ValidationError) -> SubRipFile:
     """
     Parse SRT content into subtitle objects.
     
