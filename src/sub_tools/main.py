@@ -18,7 +18,7 @@ def main():
         if "video" in parsed.tasks:
             if not parsed.hls_url:
                 parsed.func()
-                raise Exception("No HLS URL provided")
+                raise ValueError("No HLS URL provided. Use the --hls-url flag to specify the video source.")
             header(f"{step}. Download Video")
             hls_to_media(parsed.hls_url, parsed.video_file, False, parsed.overwrite)
             success("Done!")
@@ -45,7 +45,7 @@ def main():
         if "transcribe" in parsed.tasks:
             if not (parsed.gemini_api_key and parsed.gemini_api_key.strip()):
                 parsed.func()
-                raise Exception("No Gemini API Key provided")
+                raise ValueError("No Gemini API Key provided. Set the GEMINI_API_KEY environment variable or use the --gemini-api-key flag.")
             header(f"{step}. Transcribe Audio")
             transcribe(parsed)
             success("Done!")
@@ -59,4 +59,7 @@ def main():
 
     except Exception as e:
         error(f"Error: {str(e)}")
+        # Add additional context for debugging
+        if hasattr(e, "__cause__") and e.__cause__:
+            error(f"Caused by: {str(e.__cause__)}")
         exit(1)
