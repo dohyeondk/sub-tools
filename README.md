@@ -94,6 +94,19 @@ mypy src
 black .
 ```
 
+### Pre-commit Hooks
+
+The project also includes pre-commit hooks to automatically run these tools before each commit.
+
+To set up pre-commit hooks:
+
+```shell
+pip install pre-commit
+pre-commit install
+```
+
+Now the hooks will run automatically on `git commit`.
+
 ## 🧪 Testing
 
 ```shell
