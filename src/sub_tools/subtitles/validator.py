@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pysrt import SubRipFile
 from ..config.base import BaseConfig
 from ..config.errors import ValidationError
+from ..config.validation import validate_min_count, validate_threshold, parse_subtitles
 
 
 @dataclass
@@ -50,20 +51,18 @@ def _parse_subtitles(content: str) -> SubRipFile:
     """
     Parse SRT content into subtitle objects.
     """
-    try:
-        return pysrt.from_string(content)
-    except Exception as e:
-        raise SubtitleValidationError(f"Failed to parse subtitles: {str(e)}") from e
+    return parse_subtitles(content, SubtitleValidationError)
 
 
 def _validate_subtitle_count(subs: SubRipFile, min_count: int) -> None:
     """
     Validate minimum number of subtitles.
     """
-    if len(subs) < min_count:
-        raise SubtitleValidationError(
-            f"Not enough subtitles. Found {len(subs)}, minimum required: {min_count}"
-        )
+    validate_min_count(
+        subs, 
+        min_count, 
+        "Not enough subtitles. Found {found}, minimum required: {min_count}"
+    )
 
 
 def _validate_subtitle_durations(subs: SubRipFile, max_duration: int) -> None:
@@ -83,16 +82,18 @@ def _validate_time_boundaries(subs: SubRipFile, duration: int, config: ValidateC
     Validate start and end time boundaries.
     """
     begin_gap = abs(subs[0].start.ordinal)
-    if begin_gap > config.begin_gap_threshold:
-        raise SubtitleValidationError(
-            f"Initial gap too large: {begin_gap}ms (max: {config.begin_gap_threshold}ms)"
-        )
+    validate_threshold(
+        begin_gap,
+        config.begin_gap_threshold,
+        "Initial gap too large: {value}ms (max: {threshold}ms)"
+    )
 
     end_gap = abs(subs[-1].end.ordinal - duration)
-    if end_gap > config.end_gap_threshold:
-        raise SubtitleValidationError(
-            f"Final gap too large: {end_gap}ms (max: {config.end_gap_threshold}ms)"
-        )
+    validate_threshold(
+        end_gap,
+        config.end_gap_threshold,
+        "Final gap too large: {value}ms (max: {threshold}ms)"
+    )
 
 
 def _validate_time_ordering(subs: SubRipFile) -> None:
@@ -112,8 +113,8 @@ def _validate_gaps(subs: SubRipFile, max_gap: int) -> None:
     """
     for i in range(len(subs) - 1):
         gap = subs[i + 1].start.ordinal - subs[i].end.ordinal
-        if gap > max_gap:
-            raise SubtitleValidationError(
-                f"Gap too large between subtitles #{i + 1} and #{i + 2}: "
-                f"{gap}ms (max: {max_gap}ms)"
-            )
+        validate_threshold(
+            gap,
+            max_gap,
+            f"Gap too large between subtitles #{i + 1} and #{i + 2}: {{value}}ms (max: {{threshold}}ms)"
+        )
