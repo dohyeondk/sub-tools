@@ -2,10 +2,12 @@ import pysrt
 from dataclasses import dataclass
 
 from pysrt import SubRipFile
+from ..config.base import BaseConfig
+from ..config.errors import ValidationError
 
 
 @dataclass
-class ValidateConfig:
+class ValidateConfig(BaseConfig):
     """
     Configuration for subtitle validation.
     """
@@ -17,7 +19,7 @@ class ValidateConfig:
     min_subtitles: int = 1  # Minimum number of subtitles
 
 
-class SubtitleValidationError(Exception):
+class SubtitleValidationError(ValidationError):
     """
     Custom exception for subtitle validation errors.
     """

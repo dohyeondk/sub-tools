@@ -11,6 +11,7 @@ from .system.language import get_language_name
 from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
 from .system.console import info, error
+from .config.base import BaseConfig
 
 model = 'gemini-2.5-flash-preview-04-17'
 rate_limit = 10
@@ -19,8 +20,8 @@ rate_limiter = RateLimiter(rate_limit=rate_limit, period=60)
 
 
 @dataclass
-class TranscribeConfig:
-    directory: str = "tmp"
+class TranscribeConfig(BaseConfig):
+    pass
 
 
 def transcribe(parsed, config: TranscribeConfig = TranscribeConfig()) -> None:
