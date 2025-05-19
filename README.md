@@ -16,7 +16,13 @@ A robust Python toolkit powered by Google's Gemini API for converting video cont
 ### Prerequisites
 
 - Python 3.10 or higher
-- [FFmpeg](https://ffmpeg.org/) installed on your system
+- Audio backends for speech processing:
+  - [FFmpeg](https://ffmpeg.org/) installed on your system (required)
+  - [SoundFile](https://pysoundfile.readthedocs.io/) Python package (automatically installed as dependency)
+  - Additional system libraries may be required:
+    - On Ubuntu/Debian: `sudo apt-get install ffmpeg libasound2-dev`
+    - On macOS: `brew install ffmpeg portaudio`
+    - On Windows: Install FFmpeg via the official installer
 
 ### Installation
 
@@ -62,11 +68,30 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ```shell
 git clone https://github.com/dohyeondk/sub-tools.git
 cd sub-tools
-uv sync
+uv sync  # Or use: pip install -e .
+```
+
+Make sure to install the required system dependencies for audio processing:
+```shell
+# Ubuntu/Debian
+sudo apt-get install ffmpeg libasound2-dev
+
+# macOS
+brew install ffmpeg portaudio
 ```
 
 ## 🧪 Testing
 
+Before running tests, ensure you have all required dependencies:
+```shell
+# Verify ffmpeg is installed
+ffmpeg -version
+
+# Install test dependencies
+uv run pytest
+```
+
+You can run the tests with:
 ```shell
 uv run pytest
 ```

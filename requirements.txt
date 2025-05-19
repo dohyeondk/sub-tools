@@ -1,0 +1,6 @@
+pydub>=0.25.1
+silero-vad>=5.1.2
+soundfile>=0.13.1
+pytest>=8.3.4
+pysrt>=1.1.2
+rich>=13.9.4
