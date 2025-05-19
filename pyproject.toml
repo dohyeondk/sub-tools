@@ -18,9 +18,44 @@ dependencies = [
     "soundfile>=0.13.1",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.3.9",
+    "mypy>=1.9.0",
+    "black>=24.3.0",
+]
+
 [project.scripts]
 sub-tools = "sub_tools:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# Code quality tool configurations
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+include = '\.pyi?$'
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "W",   # pycodestyle warnings
+    "N",   # pep8-naming
+]
+ignore = []
+
+[tool.ruff.isort]
+known-first-party = ["sub_tools"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false

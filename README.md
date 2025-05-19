@@ -65,6 +65,35 @@ cd sub-tools
 uv sync
 ```
 
+### Code Quality Tools
+
+The project uses the following code quality tools:
+
+- **Ruff** for linting
+- **mypy** for type checking
+- **Black** for code formatting
+
+To install development dependencies:
+
+```shell
+uv sync -e dev
+# or with pip
+pip install -e ".[dev]"
+```
+
+To run the tools:
+
+```shell
+# Linting with Ruff
+ruff check .
+
+# Type checking with mypy
+mypy src
+
+# Formatting with Black
+black .
+```
+
 ## 🧪 Testing
 
 ```shell
