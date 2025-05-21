@@ -1,8 +1,6 @@
 """
-Mock implementation of rich module to make tests pass.
+Mock implementation of rich.console module.
 """
-
-print = print  # Use Python's built-in print function
 
 class Console:
     """Mock Console class."""
@@ -30,26 +28,3 @@ class Console:
     def log(self, *args, **kwargs):
         """Mock log method."""
         print(*args)
-
-def rule(*args, **kwargs):
-    """Mock rule function."""
-    pass
-
-# Add the console module
-class console:
-    class Console(Console):
-        pass
-        
-# Add the theme module
-class theme:
-    class Theme:
-        def __init__(self, *args, **kwargs):
-            pass
-            
-# Add the panel module
-class panel:
-    class Panel:
-        def __init__(self, *args, **kwargs):
-            pass
-        def __str__(self):
-            return str(args[0]) if args else ""
