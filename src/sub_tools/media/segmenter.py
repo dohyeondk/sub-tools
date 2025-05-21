@@ -11,6 +11,14 @@ from ..system.console import warning, status
 class SegmentConfig:
     """
     Configuration for audio segmentation.
+
+    Attributes:
+        min_segment_length: Minimum duration of a speech segment in ms
+        min_silent_length: Minimum duration of silence to consider as a pause in ms
+        max_silence_length: Maximum silence gap between segments that can be combined in ms
+        max_segment_length: Maximum duration of a combined segment in ms
+        threshold: Voice activity detection threshold (0.0 to 1.0)
+        directory: Directory to store segmented audio files
     """
     min_segment_length: int = 200  # 200 ms
     min_silent_length: int = 200  # 200 ms
@@ -66,7 +74,8 @@ def _group_ranges(
     max_segment_length: int,
 ) -> list[tuple[int, int]]:
     """
-    Combines ranges that are within max_silence_length of each other.
+    Combines ranges that are within max_silence_length of each other,
+    while ensuring combined segments do not exceed max_segment_length.
     """
     if not ranges:
         return []
