@@ -15,6 +15,7 @@ class SegmentConfig:
     min_segment_length: int = 200  # 200 ms
     min_silent_length: int = 200  # 200 ms
     max_silence_length: int = 3_000  # 3 seconds
+    max_segment_length: int = 10_000  # 10 seconds
     threshold: float = 0.5
     directory: str = "tmp"
 
@@ -49,7 +50,7 @@ def segment_audio(
         )
 
         segment_ranges = [(int(x['start'] * 1000), int(x['end'] * 1000)) for x in speech_timestamps]
-        segment_ranges = _group_ranges(segment_ranges, config.max_silence_length, audio_segment_length)
+        segment_ranges = _group_ranges(segment_ranges, config.max_silence_length, config.max_segment_length)
 
         audio = AudioSegment.from_file(audio_file, format="mp3")
 
