@@ -3,7 +3,7 @@ import time
 import pytest
 import pytest_asyncio
 
-from sub_tools.transcribe import RateLimiter
+from sub_tools.system.rate_limiter import RateLimiter
 
 
 @pytest_asyncio.fixture
