@@ -2,49 +2,42 @@ import os
 import shutil
 import pytest
 
-# Direct copy of the function from the original code to avoid import issues
-def _group_ranges(
-    ranges: list[tuple[int, int]],
-    max_silence_length: int,
-    max_segment_length: int,
-) -> list[tuple[int, int]]:
-    """
-    Combines ranges that are within max_silence_length of each other.
-    """
-    if not ranges:
-        return []
-
-    grouped = [ranges[0]]
-    for curr in ranges[1:]:
-        if curr[0] - grouped[-1][1] <= max_silence_length and curr[1] - grouped[-1][0] <= max_segment_length:
-            grouped[-1] = (grouped[-1][0], curr[1])
-        else:
-            grouped.append(curr)
-
-    return grouped
+from sub_tools.media.segmenter import segment_audio, _group_ranges
 
 @pytest.fixture
 def sample_audio():
-    return os.path.join(os.path.dirname(__file__), "data/sample.mp3")
+    return os.path.abspath("tests/data/sample.mp3")
+
+@pytest.fixture
+def sample_audio_fixture(sample_audio):
+    # Verify the audio file exists
+    assert os.path.exists(sample_audio), f"Sample audio file not found: {sample_audio}"
+    return sample_audio
 
 
-# Skipping this test as it requires dependencies that may not be available
-@pytest.mark.skip(reason="Requires external dependencies")
-def test_segment_audio(sample_audio):
-    tmp_dir = "tmp"
-    shutil.rmtree(tmp_dir, ignore_errors=True)
-    os.makedirs(tmp_dir, exist_ok=True)
+@pytest.mark.parametrize("sample_audio_fixture", [("sample_audio")], indirect=True)
+def test_segment_audio(sample_audio_fixture):
+    # Create a clean temporary directory
+    test_tmp_dir = "tmp_test_segmentor"
+    shutil.rmtree(test_tmp_dir, ignore_errors=True)
+    os.makedirs(test_tmp_dir, exist_ok=True)
     
-    # This would normally use segment_audio from the imported module
-    # but we're skipping this test as it's not relevant to the fix
-    
-    # Assuming some files would be created in tmp_dir
-    num_files = 0  # This would be len(os.listdir(tmp_dir)) in a real test
-    shutil.rmtree(tmp_dir)
-    
-    # The number of segments depends on the specific audio file and may change
-    # Based on the silero_vad library version, we just check it's reasonable
-    assert num_files >= 0
+    try:
+        # Configure segmenter to use our test directory
+        from sub_tools.media.segmenter import SegmentConfig
+        config = SegmentConfig(directory=test_tmp_dir)
+        
+        # Perform segmentation
+        segment_audio(sample_audio_fixture, "sample_segments", "wav", 60_000, config=config)
+        
+        # Check that segmentation produced a reasonable number of files
+        # The exact number may vary by environment, silero_vad version, etc.
+        files = os.listdir(test_tmp_dir)
+        assert len(files) > 0, "Segmentation should produce at least one file"
+        assert all(f.startswith("sample_segments_") for f in files), "All files should have the correct prefix"
+    finally:
+        # Clean up test directory
+        shutil.rmtree(test_tmp_dir, ignore_errors=True)
 
 
 def test_group_ranges():
