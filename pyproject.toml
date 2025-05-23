@@ -6,14 +6,14 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "audioop-lts>=0.2.1; python_version >= '3.13'",
-    "openai>=1.65.4",
+    "openai>=1.82.0",
     "pycountry>=24.6.1",
     "pydub>=0.25.1",
     "pysrt>=1.1.2",
-    "pytest>=8.3.4",
-    "pytest-asyncio>=0.23.5",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
     "python-ffmpeg>=2.0.12",
-    "rich>=13.9.4",
+    "rich>=14.0.0",
     "silero-vad>=5.1.2",
     "soundfile>=0.13.1",
 ]
