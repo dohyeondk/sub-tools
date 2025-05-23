@@ -17,7 +17,7 @@ A robust Python toolkit powered by Google's Gemini API for converting video cont
 
 - Python 3.10 or higher
 - [FFmpeg](https://ffmpeg.org/) installed on your system
-- [uv 0.7.7+](https://github.com/astral-sh/uv) for dependency management
+- [uv](https://github.com/astral-sh/uv) for dependency management
 
 ### Installation
 
@@ -56,7 +56,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ### Prerequisites
 
-- [uv 0.7.7+](https://github.com/astral-sh/uv)
+- [uv](https://github.com/astral-sh/uv)
 
 ### Development Setup
 
