@@ -22,7 +22,9 @@ jobs:
           version: "0.5.14"
 
       - name: Setup FFmpeg
-        uses: federicocarboni/setup-ffmpeg@v3.1
+        run: |
+          sudo apt update
+          sudo apt install -y ffmpeg
   
       - name: Install the project
         run: uv sync --all-extras --dev
