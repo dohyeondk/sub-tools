@@ -4,11 +4,12 @@ from dataclasses import dataclass
 from ..system.directory import paths_with_offsets
 from ..system.language import get_language_name
 from ..system.console import error, status
+from ..config.base import BaseConfig
 
 
 @dataclass
-class CombineConfig:
-    directory: str = "tmp"
+class CombineConfig(BaseConfig):
+    pass
 
 
 def combine_subtitles(

@@ -5,10 +5,11 @@ from pydub import AudioSegment
 from silero_vad import load_silero_vad, read_audio, get_speech_timestamps
 
 from ..system.console import warning, status
+from ..config.base import BaseConfig
 
 
 @dataclass
-class SegmentConfig:
+class SegmentConfig(BaseConfig):
     """
     Configuration for audio segmentation.
     """
@@ -16,7 +17,6 @@ class SegmentConfig:
     min_silent_length: int = 200  # 200 ms
     max_silence_length: int = 3_000  # 3 seconds
     threshold: float = 0.5
-    directory: str = "tmp"
 
 
 def segment_audio(
