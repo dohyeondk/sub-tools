@@ -1,5 +1,5 @@
-# Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+# Use a Python image with uv 0.7.7 pre-installed
+FROM ghcr.io/astral-sh/uv:0.7.7-python3.13-bookworm-slim
 
 # Install system dependencies including FFmpeg
 RUN apt-get update && apt-get install -y \
