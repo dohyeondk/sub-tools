@@ -1,7 +1,7 @@
 from pydub import AudioSegment
 
 
-def get_duration(path) -> float:
+def get_duration(path: str) -> float:
     """
     Returns the duration of an audio file in seconds.
     """

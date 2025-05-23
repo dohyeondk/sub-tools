@@ -1,6 +1,5 @@
 import re
 import base64
-from typing import Union
 from openai import AsyncOpenAI, RateLimitError
 
 
@@ -17,7 +16,7 @@ async def audio_to_subtitles(
     audio_path: str,
     audio_format: str,
     language: str,
-) -> Union[str, None]:
+) -> str | None:
     """
     Converts an audio file to subtitles.
     """

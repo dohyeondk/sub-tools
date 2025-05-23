@@ -1,6 +1,7 @@
 import argparse
 from argparse import ArgumentParser, Namespace
 from importlib.metadata import version
+from typing import List
 
 from .env_default import EnvDefault
 
@@ -14,12 +15,14 @@ def build_parser() -> ArgumentParser:
         nargs="+",
         default=["video", "audio", "signature", "segment", "transcribe", "combine"],
         help="List of tasks to perform (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(
         "-i",
         "--hls-url",
         help="HLS URL (e.g. https://example.com/playlist.m3u8) to download the video from.",
+        type=str,
     )
 
     parser.add_argument(
@@ -27,6 +30,7 @@ def build_parser() -> ArgumentParser:
         "--video-file",
         default="video.mp4",
         help="Path to the video file (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(
@@ -34,6 +38,7 @@ def build_parser() -> ArgumentParser:
         "--audio-file",
         default="audio.mp3",
         help="Path to the audio file (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(
@@ -41,6 +46,7 @@ def build_parser() -> ArgumentParser:
         "--signature-file",
         default="message.shazamsignature",
         help="Path to the Shazam signature file (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(
@@ -48,6 +54,7 @@ def build_parser() -> ArgumentParser:
         "--output-path",
         default="output",
         help="Output path for downloaded files and generated subtitles (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(
@@ -56,6 +63,7 @@ def build_parser() -> ArgumentParser:
         nargs="+",  # allows multiple values, e.g. --languages en es fr
         default=["en"],
         help="List of language codes, e.g. --languages en es fr (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(
@@ -78,6 +86,7 @@ def build_parser() -> ArgumentParser:
         action=EnvDefault,
         env_name="GEMINI_API_KEY",
         help="Gemini API Key. If not provided, the script tries to use the GEMINI_API_KEY environment variable.",
+        type=str,
     )
 
     parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
@@ -93,12 +102,14 @@ def build_parser() -> ArgumentParser:
         "--audio-segment-prefix",
         default="audio_segment",
         help="Prefix for audio segments (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(
         "--audio-segment-format",
         default="mp3",
         help="Format for audio segments (default: %(default)s).",
+        type=str,
     )
 
     parser.add_argument(

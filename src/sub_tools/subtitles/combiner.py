@@ -1,5 +1,6 @@
 import pysrt
 from dataclasses import dataclass
+from typing import List, Tuple, Iterator
 
 from ..system.directory import paths_with_offsets
 from ..system.language import get_language_name
@@ -12,7 +13,7 @@ class CombineConfig:
 
 
 def combine_subtitles(
-    language_codes: list[str],
+    language_codes: List[str],
     audio_segment_prefix: str,
     audio_segment_format: str,
     config: CombineConfig = CombineConfig(),
