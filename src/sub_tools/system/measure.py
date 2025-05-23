@@ -1,9 +1,10 @@
 import time
 from contextlib import contextmanager
+from typing import Iterator
 
 
 @contextmanager
-def measure():
+def measure() -> Iterator[None]:
     """
     Measures the time taken for a block of code to execute.
     """

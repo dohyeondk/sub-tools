@@ -1,5 +1,6 @@
 import glob
 from dataclasses import dataclass
+from typing import List, Tuple
 
 from pydub import AudioSegment
 from silero_vad import load_silero_vad, read_audio, get_speech_timestamps
@@ -60,10 +61,10 @@ def segment_audio(
 
 
 def _group_ranges(
-    ranges: list[tuple[int, int]],
+    ranges: List[Tuple[int, int]],
     max_silence_length: int,
     max_segment_length: int,
-) -> list[tuple[int, int]]:
+) -> List[Tuple[int, int]]:
     """
     Combines ranges that are within max_silence_length of each other.
     """

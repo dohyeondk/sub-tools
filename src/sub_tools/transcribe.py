@@ -1,5 +1,7 @@
 import asyncio
 from dataclasses import dataclass
+from argparse import Namespace
+from typing import List, Coroutine, Any
 from rich.progress import Progress
 
 from .intelligence.client import audio_to_subtitles, RateLimitExceededError
@@ -23,13 +25,13 @@ class TranscribeConfig:
     directory: str = "tmp"
 
 
-def transcribe(parsed, config: TranscribeConfig = TranscribeConfig()) -> None:
+def transcribe(parsed: Namespace, config: TranscribeConfig = TranscribeConfig()) -> None:
     asyncio.run(_transcribe(parsed, config))
 
 
-async def _transcribe(parsed, config: TranscribeConfig) -> None:
+async def _transcribe(parsed: Namespace, config: TranscribeConfig) -> None:
     info("Transcribing files...")
-    tasks = []
+    tasks: List[asyncio.Task] = []
 
     with Progress() as progress:
         for language_code in parsed.languages:
@@ -39,7 +41,12 @@ async def _transcribe(parsed, config: TranscribeConfig) -> None:
             progress_task = progress.add_task(language_name, total=len(path_offset_list))
 
             for path, offset in path_offset_list:
-                async def run(path, offset, language_code, progress_task):
+                async def run(
+                    path: str,
+                    offset: int,
+                    language_code: str,
+                    progress_task: int
+                ) -> None:
                     audio_path = f"./{config.directory}/{path}"
                     duration_ms = get_duration(audio_path) * 1000
                     await _transcribe_item(

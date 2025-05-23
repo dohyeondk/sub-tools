@@ -1,6 +1,7 @@
 
 import asyncio
 import time
+from typing import List
 
 
 class RateLimiter:
@@ -14,10 +15,10 @@ class RateLimiter:
         """
         self.rate_limit = rate_limit
         self.period = period
-        self.request_times = []
+        self.request_times: List[float] = []
         self.lock = asyncio.Lock()
 
-    async def acquire(self):
+    async def acquire(self) -> None:
         """Acquire permission to make a request, waiting if necessary."""
         async with self.lock:
             current_time = time.time()

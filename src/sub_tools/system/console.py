@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import Any
 
 from rich.console import Console
 from rich.theme import Theme
@@ -17,7 +18,7 @@ theme = Theme({
 console = Console(theme=theme)
 
 
-def header(title: str):
+def header(title: str) -> None:
     print(Panel(f"[bold cyan]{title}"))
 
 def info(message: str) -> None:
@@ -32,10 +33,10 @@ def warning(message: str) -> None:
 def error(message: str) -> None:
     console.print(f"[error] :cross_mark:  {message}[/error]")
 
-def log(text):
+def log(text: Any) -> None:
     console.log(text)
 
 @contextmanager
-def status(title):
+def status(title: str) -> None:
     with console.status(title):
         yield
