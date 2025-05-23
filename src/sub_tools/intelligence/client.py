@@ -4,9 +4,37 @@ from typing import Union
 from openai import AsyncOpenAI, RateLimitError
 
 
-class RateLimitExceededError(Exception):
+class TranscriptionError(Exception):
+    """
+    Base exception for transcription-related errors.
+    """
+    pass
+
+
+class RateLimitExceededError(TranscriptionError):
     """
     Custom exception for rate limit exceeded errors.
+    """
+    pass
+
+
+class AudioProcessingError(TranscriptionError):
+    """
+    Exception raised when there's an error processing the audio file.
+    """
+    pass
+
+
+class APIConnectionError(TranscriptionError):
+    """
+    Exception raised when there's an error connecting to the API.
+    """
+    pass
+
+
+class InvalidResponseError(TranscriptionError):
+    """
+    Exception raised when the API response is invalid or cannot be parsed.
     """
     pass
 
@@ -17,9 +45,26 @@ async def audio_to_subtitles(
     audio_path: str,
     audio_format: str,
     language: str,
-) -> Union[str, None]:
+) -> str:
     """
     Converts an audio file to subtitles.
+
+    Args:
+        api_key: Gemini API key
+        model: Model name to use for transcription
+        audio_path: Path to the audio file
+        audio_format: Format of the audio file (e.g., mp3, wav)
+        language: Target language for transcription
+
+    Returns:
+        String containing SRT formatted subtitles
+
+    Raises:
+        AudioProcessingError: When there's an error processing the audio file
+        RateLimitExceededError: When API rate limits are exceeded
+        APIConnectionError: When there's an error connecting to the API
+        InvalidResponseError: When the API response is invalid or cannot be processed
+        TranscriptionError: For other transcription-related errors
     """
     client = AsyncOpenAI(
         api_key=api_key,
@@ -90,8 +135,11 @@ async def audio_to_subtitles(
     hey, what would I like to be different in my life in 2025?
     """
 
-    with open(audio_path, "rb") as audio_file:
-        base64_audio = base64.b64encode(audio_file.read()).decode('utf-8')
+    try:
+        with open(audio_path, "rb") as audio_file:
+            base64_audio = base64.b64encode(audio_file.read()).decode('utf-8')
+    except Exception as e:
+        raise AudioProcessingError(f"Failed to read audio file {audio_path}: {str(e)}")
 
     try:
         response = await client.chat.completions.create(
@@ -120,10 +168,17 @@ async def audio_to_subtitles(
         text = _fix_invalid_timestamp(text)
         return text
     
-    except RateLimitError as e:
-        raise RateLimitExceededError
+    except RateLimitError:
+        raise RateLimitExceededError(f"API rate limit exceeded when transcribing {audio_path}")
     except Exception as e:
-        return None
+        # More specific error handling based on error type
+        error_message = str(e).lower()
+        if "connection" in error_message or "timeout" in error_message:
+            raise APIConnectionError(f"Failed to connect to API when transcribing {audio_path}: {str(e)}")
+        elif "invalid" in error_message or "parse" in error_message or "format" in error_message:
+            raise InvalidResponseError(f"Invalid response from API when transcribing {audio_path}: {str(e)}")
+        else:
+            raise TranscriptionError(f"Unexpected error when transcribing {audio_path}: {str(e)}")
 
 
 def _remove_unneeded_characters(text: str) -> str:

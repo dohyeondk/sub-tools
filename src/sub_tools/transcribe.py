@@ -2,7 +2,14 @@ import asyncio
 from dataclasses import dataclass
 from rich.progress import Progress
 
-from .intelligence.client import audio_to_subtitles, RateLimitExceededError
+from .intelligence.client import (
+    audio_to_subtitles, 
+    RateLimitExceededError, 
+    AudioProcessingError,
+    APIConnectionError,
+    InvalidResponseError,
+    TranscriptionError
+)
 from .media.info import get_duration
 from .subtitles.serializer import serialize_subtitles
 from .subtitles.validator import validate_subtitles, SubtitleValidationError
@@ -10,7 +17,7 @@ from .system.directory import paths_with_offsets
 from .system.language import get_language_name
 from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
-from .system.console import info, error
+from .system.console import info, error, warning
 
 model = 'gemini-2.5-flash-preview-04-17'
 rate_limit = 10
@@ -91,18 +98,37 @@ async def _transcribe_item(
 
                 except SubtitleValidationError as e:
                     if debug:
-                        write_log(f"{language_code}_{offset}", "Invalid", e, language, offset, subtitles, directory=f"./{config.directory}")
+                        write_log(f"{language_code}_{offset}", "Invalid", f"Validation error: {e}", language, offset, subtitles, directory=f"./{config.directory}")
+                        warning(f"Validation error for {language_code}_{offset}: {e}")
 
                     # Use consistent backoff strategy
                     wait_time = min(2**attempt, 60)
                     await asyncio.sleep(wait_time)
 
-            except RateLimitExceededError:
+            except RateLimitExceededError as e:
                 if debug:
-                    write_log(f"{language_code}_{offset}", "Rate Limit Exceeded", "API rate limit exceeded", language, offset, directory=f"./{config.directory}")
+                    write_log(f"{language_code}_{offset}", "Rate Limit Exceeded", f"API rate limit exceeded: {e}", language, offset, directory=f"./{config.directory}")
+                    warning(f"Rate limit exceeded for {language_code}_{offset}: {e}")
+            except AudioProcessingError as e:
+                if debug:
+                    write_log(f"{language_code}_{offset}", "Audio Processing Error", f"Failed to process audio: {e}", language, offset, directory=f"./{config.directory}")
+                    error(f"Audio processing error for {language_code}_{offset}: {e}")
+            except APIConnectionError as e:
+                if debug:
+                    write_log(f"{language_code}_{offset}", "API Connection Error", f"Failed to connect to API: {e}", language, offset, directory=f"./{config.directory}")
+                    warning(f"API connection error for {language_code}_{offset}: {e}")
+            except InvalidResponseError as e:
+                if debug:
+                    write_log(f"{language_code}_{offset}", "Invalid Response Error", f"Invalid API response: {e}", language, offset, directory=f"./{config.directory}")
+                    warning(f"Invalid response error for {language_code}_{offset}: {e}")
+            except TranscriptionError as e:
+                if debug:
+                    write_log(f"{language_code}_{offset}", "Transcription Error", f"Transcription failed: {e}", language, offset, directory=f"./{config.directory}")
+                    warning(f"Transcription error for {language_code}_{offset}: {e}")
             except Exception as e:
                 if debug:
                     write_log(f"{language_code}_{offset}", "Unexpected Error", f"Exception: {e}", language, offset, directory=f"./{config.directory}")
+                    error(f"Unexpected error for {language_code}_{offset}: {e}")
 
             # Use consistent backoff strategy
             wait_time = min(2**attempt, 60)
@@ -110,4 +136,12 @@ async def _transcribe_item(
 
     except Exception as e:
         if debug:
-            error(f"Error in transcription process: {str(e)}")
+            error(f"Critical error in transcription process for {language_code}_{offset}: {str(e)}")
+            write_log(
+                f"{language_code}_{offset}_critical", 
+                "Critical Error", 
+                f"Failed to process {audio_path} with error: {str(e)}", 
+                language, 
+                offset,
+                directory=f"./{config.directory}"
+            )
