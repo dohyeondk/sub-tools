@@ -5,6 +5,15 @@ from importlib.metadata import version
 from .env_default import EnvDefault
 
 
+def _resolve_version() -> str:
+    """Return package version; fall back to a local dev string when unavailable."""
+    try:
+        return version("sub-tools")
+    except Exception:
+        # When running from source without installation, metadata lookup can fail.
+        return "0.0.0+local"
+
+
 def build_parser() -> ArgumentParser:
     parser = argparse.ArgumentParser(prog="sub-tools", description=None)
 
@@ -85,7 +94,7 @@ def build_parser() -> ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version=version("sub-tools"),
+        version=_resolve_version(),
         help="Show program's version number and exit.",
     )
 

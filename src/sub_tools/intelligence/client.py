@@ -121,13 +121,28 @@ async def audio_to_subtitles(
         return text
     
     except RateLimitError as e:
-        raise RateLimitExceededError
+        # Preserve original traceback for debugging while raising a clear custom error
+        raise RateLimitExceededError() from e
     except Exception as e:
         return None
 
 
 def _remove_unneeded_characters(text: str) -> str:
-    return text.strip().strip("```").strip("srt")
+    """Remove common wrappers like code fences and stray language tags without altering SRT content."""
+    if text is None:
+        return ""
+
+    cleaned = text.strip()
+
+    # Remove leading code fence with optional language (e.g., ```srt or ```SRT)
+    cleaned = re.sub(r"^```\s*[a-zA-Z0-9_-]*\s*\n", "", cleaned, count=1)
+    # Remove trailing code fence
+    cleaned = re.sub(r"\n?```\s*$", "", cleaned, count=1)
+
+    # Remove a bare leading language tag without fences (e.g., 'srt' or 'SRT')
+    cleaned = re.sub(r"^(?:srt|SRT)\s*\n", "", cleaned, count=1)
+
+    return cleaned.strip()
 
 
 def _fix_invalid_timestamp(text: str) -> str:

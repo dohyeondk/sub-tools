@@ -33,7 +33,7 @@ export GEMINI_API_KEY={your_api_key}
 sub-tools --hls-url https://example.com/hls/video.m3u8 --languages en es fr
 
 # Using MP3
-sub-tools --tasks segment transcribe combine --audio-file audio.mp3 -languages en es fr
+sub-tools --tasks segment transcribe combine --audio-file audio.mp3 --languages en es fr
 ```
 
 ### Build Docker
