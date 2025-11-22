@@ -43,37 +43,28 @@ def download_from_url(
         return
 
     is_hls = _is_hls_url(url)
+    cmd = ["ffmpeg", "-y", "-i", url]
 
-    if is_hls:
-        # For HLS streams, use ffmpeg directly
-        cmd = ["ffmpeg", "-y", "-i", url]
-        if audio_only:
-            cmd.extend(["-vn", "-c:a", "libmp3lame"])
-        cmd.append(output_file)
-
-        with status("Downloading media from HLS stream..."):
-            subprocess.run(cmd, check=True, capture_output=True)
-    else:
-        # For direct file URLs, download with ffmpeg (handles various protocols)
-        cmd = ["ffmpeg", "-y", "-i", url]
-
-        # Determine if we need to convert based on output file extension
+    if audio_only:
+        cmd.extend(["-vn", "-c:a", "libmp3lame"])
+    elif not is_hls:
+        # For direct file URLs, try to use copy codec if formats match
         output_ext = Path(output_file).suffix.lower()
         input_ext = _get_file_extension(url)
-
-        if audio_only:
-            cmd.extend(["-vn", "-c:a", "libmp3lame"])
-        elif output_ext != input_ext:
-            # Let ffmpeg handle the conversion if extensions differ
-            pass  # ffmpeg will auto-convert based on output extension
-        else:
+        if output_ext == input_ext:
             # Same format, use copy to avoid re-encoding
             cmd.extend(["-c", "copy"])
+    # For HLS or when formats differ for direct URLs, ffmpeg handles conversion automatically.
 
-        cmd.append(output_file)
+    cmd.append(output_file)
 
-        with status("Downloading media from URL..."):
-            subprocess.run(cmd, check=True, capture_output=True)
+    status_message = (
+        "Downloading media from HLS stream..."
+        if is_hls
+        else "Downloading media from URL..."
+    )
+    with status(status_message):
+        subprocess.run(cmd, check=True, capture_output=True)
 
 
 def hls_to_media(
