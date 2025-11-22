@@ -55,10 +55,18 @@ def build_parser() -> ArgumentParser:
     )
 
     parser.add_argument(
-        "-o",
-        "--output-path",
+        "--working-directory",
+        "--workdir",
+        dest="working_directory",
         default="output",
-        help="Output path for downloaded files and generated subtitles (default: %(default)s).",
+        help="Working directory for intermediate and output files (default: %(default)s).",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        help="Custom output filename for the combined subtitle file. If not provided, defaults to {language_code}.srt. When multiple languages are specified, the language code will be inserted before the extension.",
     )
 
     parser.add_argument(

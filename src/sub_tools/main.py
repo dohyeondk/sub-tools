@@ -12,7 +12,7 @@ def main():
     parsed = parse_args(parser)
 
     try:
-        change_directory(parsed.output_path)
+        change_directory(parsed.working_directory)
         step = 1
 
         if "video" in parsed.tasks:
@@ -61,10 +61,13 @@ def main():
 
         if "combine" in parsed.tasks:
             header(f"{step}. Combine Subtitles")
+            from .subtitles.combiner import CombineConfig
+
             combine_subtitles(
                 parsed.languages,
                 parsed.audio_segment_prefix,
                 parsed.audio_segment_format,
+                CombineConfig(output_file=parsed.output_file),
             )
             success("Done!")
             step += 1
