@@ -30,8 +30,13 @@ def download_from_url(
 
     cmd.append(output_file)
 
-    with status("Downloading media..."):
-        subprocess.run(cmd, check=True, capture_output=True)
+    try:
+        with status("Downloading media..."):
+            subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Failed to download media from {url}: {e.stderr.decode() if e.stderr else str(e)}"
+        )
 
 
 def video_to_audio(
@@ -57,8 +62,13 @@ def video_to_audio(
         audio_file,
     ]
 
-    with status("Converting video to audio..."):
-        subprocess.run(cmd, check=True, capture_output=True)
+    try:
+        with status("Converting video to audio..."):
+            subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Failed to convert video to audio: {e.stderr.decode() if e.stderr else str(e)}"
+        )
 
 
 def media_to_signature(
@@ -90,5 +100,10 @@ def media_to_signature(
         signature_file,
     ]
 
-    with status("Generating signature..."):
-        subprocess.run(cmd, check=True, capture_output=True)
+    try:
+        with status("Generating signature..."):
+            subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Failed to generate signature: {e.stderr.decode() if e.stderr else str(e)}"
+        )
