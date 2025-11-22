@@ -27,8 +27,10 @@ def build_parser() -> ArgumentParser:
 
     parser.add_argument(
         "-i",
-        "--hls-url",
-        help="HLS URL (e.g. https://example.com/playlist.m3u8) to download the video from.",
+        "--url",
+        "--hls-url",  # Keep for backward compatibility
+        dest="url",
+        help="URL to download media from. Supports both HLS streams (e.g., https://example.com/playlist.m3u8) and direct file URLs (e.g., https://example.com/video.mp4).",
     )
 
     parser.add_argument(

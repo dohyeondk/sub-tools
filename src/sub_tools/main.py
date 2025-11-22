@@ -1,9 +1,9 @@
 from .arguments.parser import build_parser, parse_args
-from .media.converter import hls_to_media, media_to_signature, video_to_audio
+from .media.converter import download_from_url, media_to_signature, video_to_audio
 from .media.segmenter import segment_audio
 from .subtitles.combiner import combine_subtitles
+from .system.console import error, header, success
 from .system.directory import change_directory
-from .system.console import header, success, error
 from .transcribe import transcribe
 
 
@@ -16,11 +16,11 @@ def main():
         step = 1
 
         if "video" in parsed.tasks:
-            if not parsed.hls_url:
+            if not parsed.url:
                 parsed.func()
-                raise Exception("No HLS URL provided")
+                raise Exception("No URL provided")
             header(f"{step}. Download Video")
-            hls_to_media(parsed.hls_url, parsed.video_file, False, parsed.overwrite)
+            download_from_url(parsed.url, parsed.video_file, False, parsed.overwrite)
             success("Done!")
             step += 1
 
@@ -32,13 +32,21 @@ def main():
 
         if "signature" in parsed.tasks:
             header(f"{step}. Audio to Signature")
-            media_to_signature(parsed.audio_file, parsed.signature_file, parsed.overwrite)
+            media_to_signature(
+                parsed.audio_file, parsed.signature_file, parsed.overwrite
+            )
             success("Done!")
             step += 1
 
         if "segment" in parsed.tasks:
             header(f"{step}. Segment Audio")
-            segment_audio(parsed.audio_file, parsed.audio_segment_prefix, parsed.audio_segment_format, parsed.audio_segment_length, parsed.overwrite)
+            segment_audio(
+                parsed.audio_file,
+                parsed.audio_segment_prefix,
+                parsed.audio_segment_format,
+                parsed.audio_segment_length,
+                parsed.overwrite,
+            )
             success("Done!")
             step += 1
 
@@ -53,7 +61,11 @@ def main():
 
         if "combine" in parsed.tasks:
             header(f"{step}. Combine Subtitles")
-            combine_subtitles(parsed.languages, parsed.audio_segment_prefix, parsed.audio_segment_format)
+            combine_subtitles(
+                parsed.languages,
+                parsed.audio_segment_prefix,
+                parsed.audio_segment_format,
+            )
             success("Done!")
             step += 1
 
