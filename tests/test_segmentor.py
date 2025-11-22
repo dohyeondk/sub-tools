@@ -1,8 +1,10 @@
 import os
 import shutil
+
 import pytest
 
-from sub_tools.media.segmenter import segment_audio, _group_ranges
+from sub_tools.media.segmenter import _group_ranges, segment_audio
+
 
 @pytest.fixture
 def sample_audio():

@@ -1,6 +1,7 @@
-import re
 import base64
+import re
 from typing import Union
+
 from openai import AsyncOpenAI, RateLimitError
 
 
@@ -8,6 +9,7 @@ class RateLimitExceededError(Exception):
     """
     Custom exception for rate limit exceeded errors.
     """
+
     pass
 
 
@@ -27,10 +29,10 @@ async def audio_to_subtitles(
     )
 
     system_instruction = f"""
-    You're a professional transcriber and translator working specifically with {language} as the target language. 
+    You're a professional transcriber and translator working specifically with {language} as the target language.
     You take an audio file and MUST output the transcription in {language}.
     You will return an accurate, high-quality SubRip Subtitle (SRT) file.
-    
+
     CRITICAL REQUIREMENTS:
     1. IMPORTANT: Output must be only the SRT in {language}. Do not use code blocks or any other formatting.
     2. All timestamps must be in 00:00:00,000 --> 00:00:00,000 format (hh:mm:ss,ms). No deviation is allowed.
@@ -48,11 +50,11 @@ async def audio_to_subtitles(
        - All lines follow the SRT numbering and timestamp format strictly.
        - There are no overlaps, and each timestamp is valid and sequential.
        - There are no extraneous characters or missing commas for the timestamps.
-    
+
     Timing Guidelines:
     - Ensure no timestamp overlaps.
     - Always use full timestamp format (hh:mm:ss,ms).
-    - Ensure the timing aligns closely with the spoken words for synchronization. 
+    - Ensure the timing aligns closely with the spoken words for synchronization.
     - Make sure the subtitles cover the entire audio file.
 
     Text Guidelines:
@@ -68,39 +70,36 @@ async def audio_to_subtitles(
     00:00:00,000 --> 00:00:04,620
     (congregation applauds)
     So change is hard.
-    
+
     2
     00:00:04,620 --> 00:00:06,120
     We're coming out of the holidays,
-    
+
     3
     00:00:06,120 --> 00:00:07,440
     the decorations are going up,
-    
+
     4
     00:00:07,440 --> 00:00:09,240
     we're stepping into a new year.
-    
+
     5
     00:00:09,240 --> 00:00:10,890
     And so a lot of us are thinking about,
-    
+
     6
     00:00:10,890 --> 00:00:14,943
     hey, what would I like to be different in my life in 2025?
     """
 
     with open(audio_path, "rb") as audio_file:
-        base64_audio = base64.b64encode(audio_file.read()).decode('utf-8')
+        base64_audio = base64.b64encode(audio_file.read()).decode("utf-8")
 
     try:
         response = await client.chat.completions.create(
             model=model,
             messages=[
-                {
-                    "role": "system",
-                    "content": system_instruction
-                },
+                {"role": "system", "content": system_instruction},
                 {
                     "role": "user",
                     "content": [
@@ -108,22 +107,22 @@ async def audio_to_subtitles(
                             "type": "input_audio",
                             "input_audio": {
                                 "data": base64_audio,
-                                "format": audio_format
-                            }
+                                "format": audio_format,
+                            },
                         }
-                    ]
-                }
-            ]
+                    ],
+                },
+            ],
         )
         text = response.choices[0].message.content
         text = _remove_unneeded_characters(text)
         text = _fix_invalid_timestamp(text)
         return text
-    
+
     except RateLimitError as e:
         # Preserve original traceback for debugging while raising a clear custom error
         raise RateLimitExceededError() from e
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -146,5 +145,7 @@ def _remove_unneeded_characters(text: str) -> str:
 
 
 def _fix_invalid_timestamp(text: str) -> str:
-    pattern = re.compile(r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE)
+    pattern = re.compile(
+        r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE
+    )
     return pattern.sub(r"00:\1 --> 00:\2", text)

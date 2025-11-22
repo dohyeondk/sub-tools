@@ -2,9 +2,9 @@ import glob
 from dataclasses import dataclass
 
 from pydub import AudioSegment
-from silero_vad import load_silero_vad, read_audio, get_speech_timestamps
+from silero_vad import get_speech_timestamps, load_silero_vad, read_audio
 
-from ..system.console import warning, status
+from ..system.console import status, warning
 
 
 @dataclass
@@ -12,6 +12,7 @@ class SegmentConfig:
     """
     Configuration for audio segmentation.
     """
+
     min_segment_length: int = 200  # 200 ms
     min_silent_length: int = 200  # 200 ms
     max_silence_length: int = 3_000  # 3 seconds
@@ -45,11 +46,15 @@ def segment_audio(
             min_speech_duration_ms=config.min_segment_length,
             max_speech_duration_s=float(audio_segment_length) / 1000.0,
             min_silence_duration_ms=config.min_silent_length,
-            return_seconds=True
+            return_seconds=True,
         )
 
-        segment_ranges = [(int(x['start'] * 1000), int(x['end'] * 1000)) for x in speech_timestamps]
-        segment_ranges = _group_ranges(segment_ranges, config.max_silence_length, audio_segment_length)
+        segment_ranges = [
+            (int(x["start"] * 1000), int(x["end"] * 1000)) for x in speech_timestamps
+        ]
+        segment_ranges = _group_ranges(
+            segment_ranges, config.max_silence_length, audio_segment_length
+        )
 
         audio = AudioSegment.from_file(audio_file, format="mp3")
 
@@ -72,7 +77,10 @@ def _group_ranges(
 
     grouped = [ranges[0]]
     for curr in ranges[1:]:
-        if curr[0] - grouped[-1][1] <= max_silence_length and curr[1] - grouped[-1][0] <= max_segment_length:
+        if (
+            curr[0] - grouped[-1][1] <= max_silence_length
+            and curr[1] - grouped[-1][0] <= max_segment_length
+        ):
             grouped[-1] = (grouped[-1][0], curr[1])
         else:
             grouped.append(curr)
