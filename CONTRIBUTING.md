@@ -36,5 +36,27 @@ This project uses semantic versioning (MAJOR.MINOR.PATCH). The version is mainta
 5. **Create a git tag:**
    ```bash
    git tag v0.7.3
-   git push origin main --tags
+   git push origin v0.7.3
    ```
+
+6. **Create a GitHub release:**
+   ```bash
+   gh release create v0.7.3 --title "v0.7.3" --notes "## What's Changed
+   
+   ### Features
+   - New feature description
+   
+   ### Fixes
+   - Bug fix description
+   
+   **Full Changelog**: https://github.com/dohyeondk/sub-tools/compare/v0.7.2...v0.7.3"
+   ```
+
+### Version Bump Checklist
+
+- [ ] Update version in `pyproject.toml`
+- [ ] Run `uv sync` to update the lock file
+- [ ] Commit both `pyproject.toml` and `uv.lock`
+- [ ] Create and push a git tag
+- [ ] Create a GitHub release with changelog
+- [ ] Ensure all tests pass before releasing
