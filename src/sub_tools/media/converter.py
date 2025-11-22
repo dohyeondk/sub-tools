@@ -10,9 +10,8 @@ def _is_hls_url(url: str) -> bool:
     """
     Determines if a URL is an HLS stream based on file extension.
     """
-    parsed = urlparse(url)
-    path = parsed.path.lower()
-    return path.endswith(".m3u8") or path.endswith(".m3u")
+    ext = _get_file_extension(url)
+    return ext in (".m3u8", ".m3u")
 
 
 def _get_file_extension(url: str) -> str:
