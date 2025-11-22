@@ -67,20 +67,6 @@ def download_from_url(
         subprocess.run(cmd, check=True, capture_output=True)
 
 
-def hls_to_media(
-    hls_url: str,
-    output_file: str,
-    audio_only: bool = False,
-    overwrite: bool = False,
-) -> None:
-    """
-    Downloads media from an HLS URL and saves it as video or audio.
-
-    Deprecated: Use download_from_url() instead for better flexibility.
-    """
-    download_from_url(hls_url, output_file, audio_only, overwrite)
-
-
 def video_to_audio(
     video_file: str,
     audio_file: str,
