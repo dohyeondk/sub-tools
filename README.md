@@ -7,7 +7,7 @@ A robust Python toolkit powered by Google's Gemini API for converting video cont
 
 ## ✨ Features
 
-- 📝 Subtitle generation from HLS video streams.
+- 📝 Subtitle generation from video/audio URLs (HLS streams or direct file downloads).
 - 📚 Subtitle validation and quality control.
 - 🎵 Audio fingerprinting and analysis using Shazam (macOS only).
 
@@ -29,10 +29,16 @@ pip install sub-tools
 ```shell
 export GEMINI_API_KEY={your_api_key}
 
-# Using HLS
-sub-tools --hls-url https://example.com/hls/video.m3u8 --languages en es fr
+# Using HLS stream URL
+sub-tools -i https://example.com/hls/video.m3u8 --languages en es fr
 
-# Using MP3
+# Using direct video file URL
+sub-tools -i https://example.com/video.mp4 --languages en es fr
+
+# Using direct audio file URL
+sub-tools -i https://example.com/audio.mp3 --languages en es fr
+
+# Using local MP3 file
 sub-tools --tasks segment transcribe combine --audio-file audio.mp3 --languages en es fr
 ```
 
@@ -40,7 +46,7 @@ sub-tools --tasks segment transcribe combine --audio-file audio.mp3 --languages 
 
 ```shell
 docker build -t sub-tools .
-docker run -v $(pwd)/output:/app/output sub-tools sub-tools --gemini-api-key GEMINI_API_KEY -i HLS_URL -l en
+docker run -v $(pwd)/output:/app/output sub-tools sub-tools --gemini-api-key GEMINI_API_KEY -i URL -l en
 ```
 
 ## 🤝 Contributing

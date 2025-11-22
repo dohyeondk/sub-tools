@@ -1,29 +1,42 @@
 import os
 import subprocess
 
-from ..system.console import warning, status
+from ..system.console import status, warning
 
 
-def hls_to_media(
-    hls_url: str,
+def download_from_url(
+    url: str,
     output_file: str,
     audio_only: bool = False,
     overwrite: bool = False,
 ) -> None:
     """
-    Downloads media from an HLS URL and saves it as video or audio.
+    Downloads media from a URL (HLS stream or direct file) and saves it as video or audio.
+
+    Args:
+        url: URL to download from (can be HLS stream or direct file URL)
+        output_file: Path to save the downloaded file
+        audio_only: If True, extract audio only
+        overwrite: If True, overwrite existing files
     """
     if os.path.exists(output_file) and not overwrite:
         warning(f"File {output_file} already exists. Skipping download...")
         return
 
-    cmd = ["ffmpeg", "-y", "-i", hls_url]
+    cmd = ["ffmpeg", "-y", "-i", url]
+
     if audio_only:
         cmd.extend(["-vn", "-c:a", "libmp3lame"])
+
     cmd.append(output_file)
 
-    with status("Downloading media..."):
-        subprocess.run(cmd, check=True, capture_output=True)
+    try:
+        with status("Downloading media..."):
+            subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Failed to download media from {url}: {e.stderr.decode() if e.stderr else str(e)}"
+        )
 
 
 def video_to_audio(
@@ -39,15 +52,23 @@ def video_to_audio(
         return
 
     cmd = [
-        "ffmpeg", "-y",
-        "-i", video_file,
+        "ffmpeg",
+        "-y",
+        "-i",
+        video_file,
         "-vn",
-        "-c:a", "libmp3lame",
+        "-c:a",
+        "libmp3lame",
         audio_file,
     ]
 
-    with status("Converting video to audio..."):
-        subprocess.run(cmd, check=True, capture_output=True)
+    try:
+        with status("Converting video to audio..."):
+            subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Failed to convert video to audio: {e.stderr.decode() if e.stderr else str(e)}"
+        )
 
 
 def media_to_signature(
@@ -59,9 +80,11 @@ def media_to_signature(
     Generates a signature for the media file using the shazam CLI.
     """
     if os.path.exists(signature_file) and not overwrite:
-        warning(f"Skipping signature generation: Signature file {signature_file} already exists.")
+        warning(
+            f"Skipping signature generation: Signature file {signature_file} already exists."
+        )
         return
-    
+
     try:
         subprocess.run("shazam", capture_output=True, check=True)
     except (subprocess.SubprocessError, FileNotFoundError):
@@ -71,9 +94,16 @@ def media_to_signature(
     cmd = [
         "shazam",
         "signature",
-        "--input", media_file,
-        "--output", signature_file,
+        "--input",
+        media_file,
+        "--output",
+        signature_file,
     ]
 
-    with status("Generating signature..."):
-        subprocess.run(cmd, check=True, capture_output=True)
+    try:
+        with status("Generating signature..."):
+            subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Failed to generate signature: {e.stderr.decode() if e.stderr else str(e)}"
+        )
