@@ -2,10 +2,15 @@ import re
 from typing import Union
 
 from google import genai
+from google.api_core import exceptions as google_exceptions
 from google.genai import types
 
 
 class RateLimitExceededError(Exception):
+    """
+    Custom exception for rate limit exceeded errors.
+    """
+
     pass
 
 
@@ -113,15 +118,10 @@ async def audio_to_subtitles(
         text = _fix_invalid_timestamp(text)
         return text
 
-    except Exception as e:
-        # Check if it's a rate limit error
-        error_message = str(e).lower()
-        if (
-            "429" in error_message
-            or "quota" in error_message
-            or "rate limit" in error_message
-        ):
-            raise RateLimitExceededError() from e
+    except google_exceptions.ResourceExhausted as e:
+        # Handle rate limit errors specifically
+        raise RateLimitExceededError() from e
+    except Exception:
         return None
 
 
