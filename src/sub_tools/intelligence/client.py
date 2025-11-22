@@ -1,8 +1,9 @@
-import base64
 import re
 from typing import Union
 
-from openai import AsyncOpenAI, RateLimitError
+from google import genai
+from google.api_core import exceptions as google_exceptions
+from google.genai import types
 
 
 class RateLimitExceededError(Exception):
@@ -23,10 +24,7 @@ async def audio_to_subtitles(
     """
     Converts an audio file to subtitles.
     """
-    client = AsyncOpenAI(
-        api_key=api_key,
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-    )
+    client = genai.Client(api_key=api_key)
 
     system_instruction = f"""
     You're a professional transcriber and translator working specifically with {language} as the target language.
@@ -92,41 +90,42 @@ async def audio_to_subtitles(
     hey, what would I like to be different in my life in 2025?
     """
 
+    # Read audio file
     with open(audio_path, "rb") as audio_file:
-        base64_audio = base64.b64encode(audio_file.read()).decode("utf-8")
+        audio_data = audio_file.read()
 
     try:
-        response = await client.chat.completions.create(
+        # Create the audio part with proper MIME type mapping
+        mime_type_map = {
+            "mp3": "audio/mpeg",
+            "wav": "audio/wav",
+            "flac": "audio/flac",
+            "aac": "audio/aac",
+            "ogg": "audio/ogg",
+            "opus": "audio/opus",
+        }
+        mime_type = mime_type_map.get(audio_format.lower(), f"audio/{audio_format}")
+
+        audio_part = types.Part.from_bytes(data=audio_data, mime_type=mime_type)
+
+        response = await client.aio.models.generate_content(
             model=model,
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_audio",
-                            "input_audio": {
-                                "data": base64_audio,
-                                "format": audio_format,
-                            },
-                        }
-                    ],
-                },
-            ],
+            contents=[audio_part, system_instruction],
         )
-        text = response.choices[0].message.content
+
+        text = response.text
         text = _remove_unneeded_characters(text)
         text = _fix_invalid_timestamp(text)
         return text
 
-    except RateLimitError as e:
-        # Preserve original traceback for debugging while raising a clear custom error
+    except google_exceptions.ResourceExhausted as e:
+        # Handle rate limit errors specifically
         raise RateLimitExceededError() from e
     except Exception:
         return None
 
 
-def _remove_unneeded_characters(text: str) -> str:
+def _remove_unneeded_characters(text: Union[str, None]) -> str:
     """Remove common wrappers like code fences and stray language tags without altering SRT content."""
     if text is None:
         return ""

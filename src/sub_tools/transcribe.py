@@ -13,7 +13,7 @@ from .system.language import get_language_name
 from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
 
-model = "gemini-2.5-flash-preview-04-17"
+model = "gemini-2.5-flash-lite"
 rate_limit = 10
 
 rate_limiter = RateLimiter(rate_limit=rate_limit, period=60)
