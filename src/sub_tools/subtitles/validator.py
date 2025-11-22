@@ -1,6 +1,6 @@
-import pysrt
 from dataclasses import dataclass
 
+import pysrt
 from pysrt import SubRipFile
 
 
@@ -10,10 +10,14 @@ class ValidateConfig:
     Configuration for subtitle validation.
     """
 
-    max_valid_duration: int = 20_000  # Maximum allowed duration for any single subtitle (ms)
+    max_valid_duration: int = (
+        20_000  # Maximum allowed duration for any single subtitle (ms)
+    )
     begin_gap_threshold: int = 5_000  # Maximum allowed gap at the beginning (ms)
     end_gap_threshold: int = 10_000  # Maximum allowed gap at the end (ms)
-    inter_item_gap_threshold: int = 6_000  # Maximum allowed gap between consecutive subtitles (ms)
+    inter_item_gap_threshold: int = (
+        6_000  # Maximum allowed gap between consecutive subtitles (ms)
+    )
     min_subtitles: int = 1  # Minimum number of subtitles
 
 
@@ -21,6 +25,7 @@ class SubtitleValidationError(Exception):
     """
     Custom exception for subtitle validation errors.
     """
+
     pass
 
 
@@ -40,7 +45,7 @@ def validate_subtitles(
         _validate_time_ordering(subs)
         _validate_gaps(subs, config.inter_item_gap_threshold)
 
-    except SubtitleValidationError as e:
+    except SubtitleValidationError:
         raise
 
 
@@ -76,7 +81,9 @@ def _validate_subtitle_durations(subs: SubRipFile, max_duration: int) -> None:
             )
 
 
-def _validate_time_boundaries(subs: SubRipFile, duration: int, config: ValidateConfig) -> None:
+def _validate_time_boundaries(
+    subs: SubRipFile, duration: int, config: ValidateConfig
+) -> None:
     """
     Validate start and end time boundaries.
     """
@@ -100,7 +107,8 @@ def _validate_time_ordering(subs: SubRipFile) -> None:
     for i, item in enumerate(subs, 1):
         if item.start > item.end:
             raise SubtitleValidationError(
-                f"Invalid timing in subtitle #{i}: " f"start ({item.start}) after end ({item.end})"
+                f"Invalid timing in subtitle #{i}: "
+                f"start ({item.start}) after end ({item.end})"
             )
 
 
