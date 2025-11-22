@@ -1,26 +1,7 @@
 import os
 import subprocess
-from pathlib import Path
-from urllib.parse import urlparse
 
 from ..system.console import status, warning
-
-
-def _is_hls_url(url: str) -> bool:
-    """
-    Determines if a URL is an HLS stream based on file extension.
-    """
-    ext = _get_file_extension(url)
-    return ext in (".m3u8", ".m3u")
-
-
-def _get_file_extension(url: str) -> str:
-    """
-    Extracts the file extension from a URL.
-    """
-    parsed = urlparse(url)
-    path = Path(parsed.path)
-    return path.suffix.lower()
 
 
 def download_from_url(
@@ -42,28 +23,14 @@ def download_from_url(
         warning(f"File {output_file} already exists. Skipping download...")
         return
 
-    is_hls = _is_hls_url(url)
     cmd = ["ffmpeg", "-y", "-i", url]
 
     if audio_only:
         cmd.extend(["-vn", "-c:a", "libmp3lame"])
-    elif not is_hls:
-        # For direct file URLs, try to use copy codec if formats match
-        output_ext = Path(output_file).suffix.lower()
-        input_ext = _get_file_extension(url)
-        if output_ext == input_ext:
-            # Same format, use copy to avoid re-encoding
-            cmd.extend(["-c", "copy"])
-    # For HLS or when formats differ for direct URLs, ffmpeg handles conversion automatically.
 
     cmd.append(output_file)
 
-    status_message = (
-        "Downloading media from HLS stream..."
-        if is_hls
-        else "Downloading media from URL..."
-    )
-    with status(status_message):
+    with status("Downloading media..."):
         subprocess.run(cmd, check=True, capture_output=True)
 
 
