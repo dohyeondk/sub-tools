@@ -20,3 +20,4 @@ output/
 *.shazamsignature
 !tests/data/sample.mp3
 .vscode/
+scripts
