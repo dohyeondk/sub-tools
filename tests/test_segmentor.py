@@ -1,9 +1,12 @@
 import os
 import shutil
+import tempfile
 
 import pytest
 
+from sub_tools.config import Config
 from sub_tools.media.segmenter import _group_ranges, segment_audio
+from sub_tools.system.directory import get_temp_directory
 
 
 @pytest.fixture
@@ -12,11 +15,20 @@ def sample_audio():
 
 
 def test_segment_audio(sample_audio):
-    shutil.rmtree("tmp", ignore_errors=True)
-    os.makedirs("tmp", exist_ok=True)
-    segment_audio(sample_audio, "sample_segments", "wav", 60_000)
-    num_files = len(os.listdir("tmp"))
-    shutil.rmtree("tmp")
+    # Use test-specific temp directory
+    test_temp = get_temp_directory(subfolder="test-sub-tools")
+    shutil.rmtree(test_temp, ignore_errors=True)
+    os.makedirs(test_temp, exist_ok=True)
+
+    segment_audio(
+        sample_audio,
+        "sample_segments",
+        "wav",
+        60_000,
+        config=Config(directory=test_temp),
+    )
+    num_files = len(os.listdir(test_temp))
+    shutil.rmtree(test_temp)
     assert num_files == 11
 
 

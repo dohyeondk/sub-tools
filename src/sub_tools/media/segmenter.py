@@ -1,23 +1,10 @@
 import glob
-from dataclasses import dataclass
 
 from pydub import AudioSegment
 from silero_vad import get_speech_timestamps, load_silero_vad, read_audio
 
+from ..config import Config
 from ..system.console import status, warning
-
-
-@dataclass
-class SegmentConfig:
-    """
-    Configuration for audio segmentation.
-    """
-
-    min_segment_length: int = 200  # 200 ms
-    min_silent_length: int = 200  # 200 ms
-    max_silence_length: int = 3_000  # 3 seconds
-    threshold: float = 0.5
-    directory: str = "tmp"
 
 
 def segment_audio(
@@ -26,7 +13,7 @@ def segment_audio(
     audio_segment_format: str,
     audio_segment_length: int,
     overwrite: bool = False,
-    config: SegmentConfig = SegmentConfig(),
+    config: Config = Config(),
 ) -> None:
     """
     Segments an audio file using natural pauses.
@@ -42,7 +29,7 @@ def segment_audio(
         speech_timestamps = get_speech_timestamps(
             wav,
             model,
-            threshold=config.threshold,
+            threshold=config.segment_threshold,
             min_speech_duration_ms=config.min_segment_length,
             max_speech_duration_s=float(audio_segment_length) / 1000.0,
             min_silence_duration_ms=config.min_silent_length,

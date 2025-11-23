@@ -1,8 +1,9 @@
 import asyncio
-from dataclasses import dataclass
+import os
 
 from rich.progress import Progress
 
+from .config import Config
 from .intelligence.client import RateLimitExceededError, audio_to_subtitles
 from .media.info import get_duration
 from .subtitles.serializer import serialize_subtitles
@@ -19,16 +20,11 @@ rate_limit = 10
 rate_limiter = RateLimiter(rate_limit=rate_limit, period=60)
 
 
-@dataclass
-class TranscribeConfig:
-    directory: str = "tmp"
-
-
-def transcribe(parsed, config: TranscribeConfig = TranscribeConfig()) -> None:
+def transcribe(parsed, config: Config = Config()) -> None:
     asyncio.run(_transcribe(parsed, config))
 
 
-async def _transcribe(parsed, config: TranscribeConfig) -> None:
+async def _transcribe(parsed, config: Config) -> None:
     info("Transcribing files...")
     tasks = []
 
@@ -38,7 +34,7 @@ async def _transcribe(parsed, config: TranscribeConfig) -> None:
             path_offset_list = paths_with_offsets(
                 parsed.audio_segment_prefix,
                 parsed.audio_segment_format,
-                f"./{config.directory}",
+                config.directory,
             )
 
             progress_task = progress.add_task(
@@ -48,7 +44,7 @@ async def _transcribe(parsed, config: TranscribeConfig) -> None:
             for path, offset in path_offset_list:
 
                 async def run(path, offset, language_code, progress_task):
-                    audio_path = f"./{config.directory}/{path}"
+                    audio_path = f"{config.directory}/{path}"
                     duration_ms = get_duration(audio_path) * 1000
                     await _transcribe_item(
                         audio_path,
@@ -59,6 +55,7 @@ async def _transcribe(parsed, config: TranscribeConfig) -> None:
                         parsed.gemini_api_key,
                         parsed.retry,
                         parsed.debug,
+                        parsed.overwrite,
                         config,
                     )
                     progress.update(progress_task, advance=1)
@@ -80,8 +77,14 @@ async def _transcribe_item(
     api_key: str,
     retry: int,
     debug: bool,
-    config: TranscribeConfig,
+    overwrite: bool,
+    config: Config,
 ) -> None:
+    # Check if subtitle file already exists
+    subtitle_path = f"{config.directory}/{language_code}_{offset}.srt"
+    if os.path.exists(subtitle_path) and not overwrite:
+        return
+
     language = get_language_name(language_code)
 
     try:
@@ -104,7 +107,7 @@ async def _transcribe_item(
                             language,
                             offset,
                             subtitles,
-                            directory=f"./{config.directory}",
+                            directory=config.directory,
                         )
                     serialize_subtitles(
                         subtitles, language_code, int(offset), config.directory
@@ -120,7 +123,7 @@ async def _transcribe_item(
                             language,
                             offset,
                             subtitles,
-                            directory=f"./{config.directory}",
+                            directory=config.directory,
                         )
 
                     # Use consistent backoff strategy
@@ -135,7 +138,7 @@ async def _transcribe_item(
                         "API rate limit exceeded",
                         language,
                         offset,
-                        directory=f"./{config.directory}",
+                        directory=config.directory,
                     )
             except Exception as e:
                 if debug:
@@ -145,7 +148,7 @@ async def _transcribe_item(
                         f"Exception: {e}",
                         language,
                         offset,
-                        directory=f"./{config.directory}",
+                        directory=config.directory,
                     )
 
             # Use consistent backoff strategy

@@ -6,7 +6,7 @@ from ..system.console import status, warning
 
 def download_from_url(
     url: str,
-    output_file: str,
+    video_file: str,
     audio_only: bool = False,
     overwrite: bool = False,
 ) -> None:
@@ -15,12 +15,12 @@ def download_from_url(
 
     Args:
         url: URL to download from (can be HLS stream or direct file URL)
-        output_file: Path to save the downloaded file
+        video_file: Path to save the downloaded video file
         audio_only: If True, extract audio only
         overwrite: If True, overwrite existing files
     """
-    if os.path.exists(output_file) and not overwrite:
-        warning(f"File {output_file} already exists. Skipping download...")
+    if os.path.exists(video_file) and not overwrite:
+        warning(f"File {video_file} already exists. Skipping download...")
         return
 
     cmd = ["ffmpeg", "-y", "-i", url]
@@ -28,7 +28,7 @@ def download_from_url(
     if audio_only:
         cmd.extend(["-vn", "-c:a", "libmp3lame"])
 
-    cmd.append(output_file)
+    cmd.append(video_file)
 
     try:
         with status("Downloading media..."):

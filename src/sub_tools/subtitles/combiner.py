@@ -1,24 +1,18 @@
 import os
-from dataclasses import dataclass
 
 import pysrt
 
+from ..config import Config
 from ..system.console import error, status
 from ..system.directory import paths_with_offsets
 from ..system.language import get_language_name
-
-
-@dataclass
-class CombineConfig:
-    directory: str = "tmp"
-    output_file: str | None = None
 
 
 def combine_subtitles(
     language_codes: list[str],
     audio_segment_prefix: str,
     audio_segment_format: str,
-    config: CombineConfig = CombineConfig(),
+    config: Config = Config(),
 ) -> None:
     """
     Combines subtitles for a list of languages.
@@ -37,20 +31,18 @@ def combine_subtitles_for_language(
     language_code: str,
     audio_segment_prefix: str,
     audio_segment_format: str,
-    config: CombineConfig,
+    config: Config,
 ) -> None:
     """
     Combines subtitles for a single language.
     """
     audio_segments_paths_with_offset = list(
-        paths_with_offsets(
-            audio_segment_prefix, audio_segment_format, f"./{config.directory}"
-        )
+        paths_with_offsets(audio_segment_prefix, audio_segment_format, config.directory)
     )
     audio_count = len(audio_segments_paths_with_offset)
 
     subtitles_paths_with_offsets = paths_with_offsets(
-        language_code, "srt", f"./{config.directory}"
+        language_code, "srt", config.directory
     )
     subtitles_count = len(subtitles_paths_with_offsets)
 
@@ -68,13 +60,6 @@ def combine_subtitles_for_language(
         subs += current_subs
     subs.clean_indexes()
 
-    filename = None
-    extension = None
-    if config.output_file:
-        filename, extention = os.path.splitext(config.output_file)
-    if filename and extension:
-        output_filename = f"{filename}_{language_code}{extension}"
-    else:
-        output_filename = f"{language_code}.srt"
+    output_filename = f"output/{language_code}.srt"
 
     subs.save(output_filename, encoding="utf-8")
