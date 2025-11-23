@@ -307,12 +307,12 @@ class TestPathsWithOffsets:
         result = paths_with_offsets("audio", "mp3", str(tmp_path))
 
         assert len(result) == 3
-        assert ("audio_0.mp3", "0") in result
-        assert ("audio_5000.mp3", "5000") in result
-        assert ("audio_10000.mp3", "10000") in result
+        assert ("audio_0.mp3", 0) in result
+        assert ("audio_5000.mp3", 5000) in result
+        assert ("audio_10000.mp3", 10000) in result
 
     def test_returns_sorted_list(self, tmp_path):
-        """Test that returns files in sorted order."""
+        """Test that returns files in sorted order by numeric offset."""
         # Create files in random order
         (tmp_path / "seg_10000.wav").touch()
         (tmp_path / "seg_0.wav").touch()
@@ -320,10 +320,10 @@ class TestPathsWithOffsets:
 
         result = paths_with_offsets("seg", "wav", str(tmp_path))
 
-        # Should be sorted by filename
-        assert result[0][0] == "seg_0.wav"
-        assert result[1][0] == "seg_10000.wav"
-        assert result[2][0] == "seg_5000.wav"
+        # Should be sorted numerically by offset, not alphabetically
+        assert result[0] == ("seg_0.wav", 0)
+        assert result[1] == ("seg_5000.wav", 5000)
+        assert result[2] == ("seg_10000.wav", 10000)
 
     def test_ignores_non_matching_files(self, tmp_path):
         """Test that ignores files that don't match pattern."""
@@ -372,7 +372,7 @@ class TestPathsWithOffsets:
         result = paths_with_offsets("seg", "mp3", str(tmp_path))
 
         assert len(result) == 1
-        assert result[0][1] == "999999999"
+        assert result[0][1] == 999999999
 
     def test_uses_current_directory_by_default(self):
         """Test that uses current directory when no directory specified."""
@@ -393,13 +393,13 @@ class TestPathsWithOffsets:
             os.chdir(original_dir)
             shutil.rmtree(temp_dir)
 
-    def test_offset_as_string(self, tmp_path):
-        """Test that offset is returned as string."""
+    def test_offset_as_int(self, tmp_path):
+        """Test that offset is returned as int for proper numeric sorting."""
         (tmp_path / "audio_12345.mp3").touch()
 
         result = paths_with_offsets("audio", "mp3", str(tmp_path))
 
         assert len(result) == 1
         path, offset = result[0]
-        assert isinstance(offset, str)
-        assert offset == "12345"
+        assert isinstance(offset, int)
+        assert offset == 12345
