@@ -1,23 +1,11 @@
 import glob
-from dataclasses import dataclass
+import os
 
 from pydub import AudioSegment
 from silero_vad import get_speech_timestamps, load_silero_vad, read_audio
 
+from ..config import Config
 from ..system.console import status, warning
-
-
-@dataclass
-class SegmentConfig:
-    """
-    Configuration for audio segmentation.
-    """
-
-    min_segment_length: int = 200  # 200 ms
-    min_silent_length: int = 200  # 200 ms
-    max_silence_length: int = 3_000  # 3 seconds
-    threshold: float = 0.5
-    directory: str = "tmp"
 
 
 def segment_audio(
@@ -26,12 +14,14 @@ def segment_audio(
     audio_segment_format: str,
     audio_segment_length: int,
     overwrite: bool = False,
-    config: SegmentConfig = SegmentConfig(),
+    config: Config = Config(),
 ) -> None:
     """
     Segments an audio file using natural pauses.
     """
-    pattern = f"{config.directory}/{audio_segment_prefix}_[0-9]*.{audio_segment_format}"
+    pattern = os.path.join(
+        config.directory, f"{audio_segment_prefix}_[0-9]*.{audio_segment_format}"
+    )
     if glob.glob(pattern) and not overwrite:
         warning("Segmented audio files already exist. Skipping segmentation...")
         return
@@ -42,7 +32,7 @@ def segment_audio(
         speech_timestamps = get_speech_timestamps(
             wav,
             model,
-            threshold=config.threshold,
+            threshold=config.segment_threshold,
             min_speech_duration_ms=config.min_segment_length,
             max_speech_duration_s=float(audio_segment_length) / 1000.0,
             min_silence_duration_ms=config.min_silent_length,
@@ -59,7 +49,10 @@ def segment_audio(
         audio = AudioSegment.from_file(audio_file, format="mp3")
 
         for start_ms, end_ms in segment_ranges:
-            output_file = f"{config.directory}/{audio_segment_prefix}_{start_ms}.{audio_segment_format}"
+            output_file = os.path.join(
+                config.directory,
+                f"{audio_segment_prefix}_{start_ms}.{audio_segment_format}",
+            )
             partial_audio = audio[start_ms:end_ms]
             partial_audio.export(output_file, format=audio_segment_format)
 

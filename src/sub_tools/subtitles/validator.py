@@ -1,24 +1,7 @@
-from dataclasses import dataclass
-
 import pysrt
 from pysrt import SubRipFile
 
-
-@dataclass
-class ValidateConfig:
-    """
-    Configuration for subtitle validation.
-    """
-
-    max_valid_duration: int = (
-        20_000  # Maximum allowed duration for any single subtitle (ms)
-    )
-    begin_gap_threshold: int = 5_000  # Maximum allowed gap at the beginning (ms)
-    end_gap_threshold: int = 10_000  # Maximum allowed gap at the end (ms)
-    inter_item_gap_threshold: int = (
-        6_000  # Maximum allowed gap between consecutive subtitles (ms)
-    )
-    min_subtitles: int = 1  # Minimum number of subtitles
+from ..config import Config
 
 
 class SubtitleValidationError(Exception):
@@ -32,7 +15,7 @@ class SubtitleValidationError(Exception):
 def validate_subtitles(
     content: str,
     duration: int,
-    config: ValidateConfig = ValidateConfig(),
+    config: Config = Config(),
 ) -> None:
     """
     Validate subtitles against specified criteria.
@@ -81,9 +64,7 @@ def _validate_subtitle_durations(subs: SubRipFile, max_duration: int) -> None:
             )
 
 
-def _validate_time_boundaries(
-    subs: SubRipFile, duration: int, config: ValidateConfig
-) -> None:
+def _validate_time_boundaries(subs: SubRipFile, duration: int, config: Config) -> None:
     """
     Validate start and end time boundaries.
     """

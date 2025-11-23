@@ -36,37 +36,22 @@ def build_parser() -> ArgumentParser:
     parser.add_argument(
         "-v",
         "--video-file",
-        default="video.mp4",
+        default="output/video.mp4",
         help="Path to the video file (default: %(default)s).",
     )
 
     parser.add_argument(
         "-a",
         "--audio-file",
-        default="audio.mp3",
+        default="output/audio.mp3",
         help="Path to the audio file (default: %(default)s).",
     )
 
     parser.add_argument(
         "-s",
         "--signature-file",
-        default="message.shazamsignature",
+        default="output/message.shazamsignature",
         help="Path to the Shazam signature file (default: %(default)s).",
-    )
-
-    parser.add_argument(
-        "--working-directory",
-        "--workdir",
-        dest="working_directory",
-        default="output",
-        help="Working directory for intermediate and output files (default: %(default)s).",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        dest="output_file",
-        help="Custom output filename for the combined subtitle file. If not provided, defaults to {language_code}.srt. When multiple languages are specified, the language code will be inserted before the extension.",
     )
 
     parser.add_argument(
@@ -75,6 +60,14 @@ def build_parser() -> ArgumentParser:
         nargs="+",  # allows multiple values, e.g. --languages en es fr
         default=["en"],
         help="List of language codes, e.g. --languages en es fr (default: %(default)s).",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        default=None,
+        help="Custom output filename for combined subtitles (e.g., 'output.srt'). Language code will be inserted before extension.",
     )
 
     parser.add_argument(

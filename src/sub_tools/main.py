@@ -1,9 +1,10 @@
 from .arguments.parser import build_parser, parse_args
+from .config import Config
 from .media.converter import download_from_url, media_to_signature, video_to_audio
 from .media.segmenter import segment_audio
 from .subtitles.combiner import combine_subtitles
 from .system.console import error, header, success
-from .system.directory import change_directory
+from .system.directory import ensure_output_directory, get_temp_directory
 from .transcribe import transcribe
 
 
@@ -12,7 +13,15 @@ def main():
     parsed = parse_args(parser)
 
     try:
-        change_directory(parsed.working_directory)
+        # Ensure output directory exists for final files
+        ensure_output_directory()
+
+        # Get temp directory for WIP files (URL-based if provided)
+        temp_dir = get_temp_directory(parsed.url)
+
+        # Create unified config
+        config = Config(directory=temp_dir, output_file=parsed.output_file)
+
         step = 1
 
         if "video" in parsed.tasks:
@@ -46,6 +55,7 @@ def main():
                 parsed.audio_segment_format,
                 parsed.audio_segment_length,
                 parsed.overwrite,
+                config,
             )
             success("Done!")
             step += 1
@@ -55,19 +65,17 @@ def main():
                 parsed.func()
                 raise Exception("No Gemini API Key provided")
             header(f"{step}. Transcribe Audio")
-            transcribe(parsed)
+            transcribe(parsed, config)
             success("Done!")
             step += 1
 
         if "combine" in parsed.tasks:
             header(f"{step}. Combine Subtitles")
-            from .subtitles.combiner import CombineConfig
-
             combine_subtitles(
                 parsed.languages,
                 parsed.audio_segment_prefix,
                 parsed.audio_segment_format,
-                CombineConfig(output_file=parsed.output_file),
+                config,
             )
             success("Done!")
             step += 1
