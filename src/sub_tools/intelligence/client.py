@@ -42,12 +42,20 @@ async def audio_to_subtitles(
        - A timestamp line
        - 1-2 lines of text
        - A blank line between entries.
-    5. The SRT file MUST cover the entire input audio file without missing any content.
+    5. ABSOLUTE REQUIREMENT - COMPLETE TRANSCRIPTION: You MUST transcribe EVERY SINGLE WORD and sound from the ENTIRE audio file from start to finish.
+       - Listen to the complete audio file and transcribe everything you hear.
+       - The first subtitle MUST start at or near 00:00:00,000 (the very beginning of the audio).
+       - The last subtitle MUST end at or very close to the actual end of the audio file.
+       - Do NOT stop transcribing early. Do NOT skip any portions of the audio.
+       - If you reach what seems like a natural stopping point but there is more audio, CONTINUE transcribing.
+       - Count: If the audio is X seconds long, your final subtitle timestamp should approach X seconds.
     6. The SRT file MUST be in the target language.
     7. Before returning the final SRT, re-check that:
        - All lines follow the SRT numbering and timestamp format strictly.
        - There are no overlaps, and each timestamp is valid and sequential.
        - There are no extraneous characters or missing commas for the timestamps.
+       - YOU HAVE TRANSCRIBED THE ENTIRE AUDIO FILE - verify the last timestamp is near the end of the audio duration.
+       - YOU HAVE NOT MISSED ANY CONTENT from beginning to end.
 
     Timing Guidelines:
     - Ensure no timestamp overlaps.
