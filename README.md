@@ -40,6 +40,9 @@ sub-tools -i https://example.com/audio.mp3 --languages en es fr
 
 # Using local MP3 file
 sub-tools --tasks segment transcribe combine --audio-file audio.mp3 --languages en es fr
+
+# Specify a custom Gemini model (default: gemini-2.5-flash-lite)
+sub-tools -i https://example.com/video.mp4 --languages en --model gemini-2.5-flash-preview-04-17
 ```
 
 ### Build Docker

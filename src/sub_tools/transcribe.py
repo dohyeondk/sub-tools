@@ -14,7 +14,6 @@ from .system.language import get_language_name
 from .system.logger import write_log
 from .system.rate_limiter import RateLimiter
 
-model = "gemini-2.5-flash-lite"
 rate_limit = 10
 
 rate_limiter = RateLimiter(rate_limit=rate_limit, period=60)
@@ -53,6 +52,7 @@ async def _transcribe(parsed, config: Config) -> None:
                         offset,
                         language_code,
                         parsed.gemini_api_key,
+                        parsed.model,
                         parsed.retry,
                         parsed.debug,
                         parsed.overwrite,
@@ -75,6 +75,7 @@ async def _transcribe_item(
     offset: int,
     language_code: str,
     api_key: str,
+    model: str,
     retry: int,
     debug: bool,
     overwrite: bool,

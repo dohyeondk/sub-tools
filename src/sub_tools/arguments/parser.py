@@ -92,6 +92,13 @@ def build_parser() -> ArgumentParser:
         help="Gemini API Key. If not provided, the script tries to use the GEMINI_API_KEY environment variable.",
     )
 
+    parser.add_argument(
+        "--model",
+        "-m",
+        default="gemini-2.5-flash-lite",
+        help="Gemini model to use for transcription (default: %(default)s).",
+    )
+
     parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
 
     parser.add_argument(
