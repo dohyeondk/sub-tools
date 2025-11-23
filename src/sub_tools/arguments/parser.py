@@ -63,6 +63,14 @@ def build_parser() -> ArgumentParser:
     )
 
     parser.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        default=None,
+        help="Custom output filename for combined subtitles (e.g., 'output.srt'). Language code will be inserted before extension.",
+    )
+
+    parser.add_argument(
         "--overwrite",
         "-y",
         action="store_true",

@@ -20,7 +20,7 @@ def main():
         temp_dir = get_temp_directory(parsed.url)
 
         # Create unified config
-        config = Config(directory=temp_dir)
+        config = Config(directory=temp_dir, output_file=parsed.output_file)
 
         step = 1
 

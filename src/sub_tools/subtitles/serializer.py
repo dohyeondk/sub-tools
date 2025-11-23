@@ -1,3 +1,5 @@
+import os
+
 import pysrt
 
 
@@ -12,4 +14,5 @@ def serialize_subtitles(
     """
     subs = pysrt.from_string(content)
     subs.shift(milliseconds=offset)
-    subs.save(f"{directory}/{language_code}_{offset}.srt", encoding="utf-8", eol="\r\n")
+    output_path = os.path.join(directory, f"{language_code}_{offset}.srt")
+    subs.save(output_path, encoding="utf-8", eol="\r\n")

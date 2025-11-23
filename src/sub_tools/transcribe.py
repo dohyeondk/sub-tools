@@ -44,7 +44,7 @@ async def _transcribe(parsed, config: Config) -> None:
             for path, offset in path_offset_list:
 
                 async def run(path, offset, language_code, progress_task):
-                    audio_path = f"{config.directory}/{path}"
+                    audio_path = os.path.join(config.directory, path)
                     duration_ms = get_duration(audio_path) * 1000
                     await _transcribe_item(
                         audio_path,
@@ -81,7 +81,7 @@ async def _transcribe_item(
     config: Config,
 ) -> None:
     # Check if subtitle file already exists
-    subtitle_path = f"{config.directory}/{language_code}_{offset}.srt"
+    subtitle_path = os.path.join(config.directory, f"{language_code}_{offset}.srt")
     if os.path.exists(subtitle_path) and not overwrite:
         return
 

@@ -13,6 +13,7 @@ class Config:
 
     # Shared
     directory: str | None = None
+    output_file: str | None = None  # Custom output filename for combined subtitles
 
     # Segmentation
     min_segment_length: int = 200  # 200 ms
