@@ -2622,15 +2622,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pydub"
-version = "0.25.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/9a/e6bca0eed82db26562c73b5076539a4a08d3cffd19c3cc5913a3e61145fd/pydub-0.25.1.tar.gz", hash = "sha256:980a33ce9949cab2a569606b65674d748ecbca4f0796887fd6f46173a7b0d30f", size = 38326, upload-time = "2021-03-10T02:09:54.659Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl", hash = "sha256:65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6", size = 32327, upload-time = "2021-03-10T02:09:53.503Z" },
-]
-
-[[package]]
 name = "pyee"
 version = "12.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3358,20 +3349,6 @@ wheels = [
 ]
 
 [[package]]
-name = "silero-vad"
-version = "5.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "onnxruntime" },
-    { name = "torch" },
-    { name = "torchaudio" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/b4/d0311b2e6220a11f8f4699f4a278cb088131573286cdfe804c87c7eb5123/silero_vad-5.1.2.tar.gz", hash = "sha256:c442971160026d2d7aa0ad83f0c7ee86c89797a65289fe625c8ea59fc6fb828d", size = 5098526, upload-time = "2024-10-09T09:50:47.019Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/f7/5ae11d13fbb733cd3bfd7ff1c3a3902e6f55437df4b72307c1f168146268/silero_vad-5.1.2-py3-none-any.whl", hash = "sha256:93b41953d7774b165407fda6b533c119c5803864e367d5034dc626c82cfdf661", size = 5026737, upload-time = "2024-10-09T09:50:44.355Z" },
-]
-
-[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3495,14 +3472,11 @@ dependencies = [
     { name = "google-api-core" },
     { name = "google-genai" },
     { name = "pycountry" },
-    { name = "pydub" },
     { name = "pysrt" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "python-ffmpeg" },
     { name = "rich" },
-    { name = "silero-vad" },
-    { name = "soundfile" },
     { name = "whisperx" },
 ]
 
@@ -3512,14 +3486,11 @@ requires-dist = [
     { name = "google-api-core", specifier = ">=2.28.1" },
     { name = "google-genai", specifier = ">=1.52.0" },
     { name = "pycountry", specifier = ">=24.6.1" },
-    { name = "pydub", specifier = ">=0.25.1" },
     { name = "pysrt", specifier = ">=1.1.2" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest-asyncio", specifier = ">=0.23.5" },
     { name = "python-ffmpeg", specifier = ">=2.0.12" },
     { name = "rich", specifier = ">=13.9.4" },
-    { name = "silero-vad", specifier = ">=5.1.2" },
-    { name = "soundfile", specifier = ">=0.13.1" },
     { name = "whisperx", specifier = ">=3.1.1" },
 ]
 
