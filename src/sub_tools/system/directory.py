@@ -85,5 +85,3 @@ def get_cached_file_path(
     """
     temp_dir = get_temp_directory(url, subfolder)
     return os.path.join(temp_dir, filename)
-
-
