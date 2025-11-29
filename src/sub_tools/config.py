@@ -15,6 +15,16 @@ class Config:
     directory: str | None = None
     output_file: str | None = None  # Custom output filename for combined subtitles
 
+    # Gemini
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash-lite"
+    gemini_max_retries: int = 3
+
+    # WhisperX
+    whisperx_model: str = "large-v2"  # WhisperX model to use
+    whisperx_device: str = "cpu"  # Device for WhisperX inference (cpu, cuda)
+    whisperx_compute_type: str = "int8"  # Compute type (int8, float16, float32)
+
     # Segmentation
     min_segment_length: int = 200  # 200 ms
     min_silent_length: int = 200  # 200 ms
@@ -31,3 +41,7 @@ class Config:
         6_000  # Maximum allowed gap between consecutive subtitles (ms)
     )
     min_subtitles: int = 1  # Minimum number of subtitles
+
+
+# Global config instance
+config = Config()
