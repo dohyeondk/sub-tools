@@ -24,7 +24,7 @@ class TestDownloadFromUrl:
     def test_downloads_video_successfully(self, tmp_path):
         """Test successful video download from real URL."""
         video_file = tmp_path / "test_video.mp4"
-        download_from_url(TEST_VIDEO_URL, str(video_file))
+        download_from_url(TEST_VIDEO_URL, video_file)
 
         assert video_file.exists()
         assert video_file.stat().st_size > 0
