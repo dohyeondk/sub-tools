@@ -9,11 +9,14 @@ dependencies = [
     "google-api-core>=2.28.1",
     "google-genai>=1.52.0",
     "pycountry>=24.6.1",
+    "pydub>=0.25.1",
     "pysrt>=1.1.2",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.23.5",
     "python-ffmpeg>=2.0.12",
     "rich>=13.9.4",
+    "silero-vad>=5.1.2",
+    "soundfile>=0.13.1",
     "whisperx>=3.1.1",
 ]
 
