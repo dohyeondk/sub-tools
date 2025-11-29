@@ -21,7 +21,7 @@ def build_parser() -> ArgumentParser:
         "--tasks",
         "-t",
         nargs="+",
-        default=["video", "audio", "signature", "segment", "transcribe", "combine"],
+        default=["video", "audio", "signature", "transcribe"],
         help="List of tasks to perform (default: %(default)s).",
     )
 
@@ -106,25 +106,6 @@ def build_parser() -> ArgumentParser:
         action="version",
         version=_resolve_version(),
         help="Show program's version number and exit.",
-    )
-
-    parser.add_argument(
-        "--audio-segment-prefix",
-        default="audio_segment",
-        help="Prefix for audio segments (default: %(default)s).",
-    )
-
-    parser.add_argument(
-        "--audio-segment-format",
-        default="mp3",
-        help="Format for audio segments (default: %(default)s).",
-    )
-
-    parser.add_argument(
-        "--audio-segment-length",
-        type=int,
-        default=300_000,
-        help="Length of each audio segment, in milliseconds (default: %(default)s).",
     )
 
     def print_help() -> None:
