@@ -4,7 +4,6 @@ Directory and temporary file management utilities.
 
 import hashlib
 import os
-import re
 import tempfile
 
 
@@ -86,20 +85,3 @@ def get_cached_file_path(
     """
     temp_dir = get_temp_directory(url, subfolder)
     return os.path.join(temp_dir, filename)
-
-
-def paths_with_offsets(
-    prefix: str, file_format: str, directory: str = "."
-) -> list[tuple[str, int]]:
-    """
-    Returns a list of paths with offsets, sorted numerically by offset.
-    """
-    pattern = rf"{prefix}_(\d+)\.{file_format}"
-    paths = [
-        (path, int(match.group(1)))
-        for path in os.listdir(directory)
-        for match in [re.match(pattern, path)]
-        if match and match.group(1)
-    ]
-    # Sort by numeric offset, not alphabetically
-    return sorted(paths, key=lambda x: x[1])
