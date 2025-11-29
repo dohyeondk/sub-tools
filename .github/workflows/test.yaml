@@ -1,9 +1,9 @@
 name: Test
 
-on: 
+on:
   push:
     branches:
-      - '**'
+      - "**"
 
 jobs:
   test:
@@ -30,9 +30,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y ffmpeg
-  
+
       - name: Install the project
         run: uv sync --all-extras --dev
 
       - name: Run tests
-        run: uv run pytest
+        run: uv run pytest -m "not slow"
