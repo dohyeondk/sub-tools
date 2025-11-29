@@ -77,7 +77,7 @@ uv sync
 ## 🧪 Testing
 
 ```shell
-uv run pytest
+uv run pytest -m "not slow"
 ```
 
 ## 📝 License

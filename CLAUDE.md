@@ -35,7 +35,7 @@ uv run sub-tools -i <url> --languages en --model gemini-2.5-flash-preview-04-17
 ### Testing
 ```bash
 # Run all tests
-uv run pytest
+uv run pytest -m "not slow"
 
 # Run specific test file
 uv run pytest tests/test_rate_limiter.py
