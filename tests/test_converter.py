@@ -13,6 +13,11 @@ from sub_tools.media.converter import download_from_url, video_to_audio
 # Test video URL - 10 second Big Buck Bunny sample (1MB)
 TEST_VIDEO_URL = "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4"
 
+# Test HLS/m3u8 stream URL
+TEST_M3U8_URL = (
+    "http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"
+)
+
 
 @pytest.fixture
 def temp_output_dir():
@@ -78,6 +83,21 @@ class TestDownloadFromUrl:
             download_from_url(invalid_url, video_file)
 
         assert "Failed to download media" in str(exc_info.value)
+
+    @pytest.mark.slow
+    def test_downloads_hls_stream_successfully(self, temp_output_dir):
+        """Test successful HLS/m3u8 stream download.
+
+        Note: This test is marked as slow because it downloads a large 4K video
+        which can take several minutes. Run with: pytest -m slow
+        """
+        video_file = os.path.join(temp_output_dir, "test_hls_video.mp4")
+
+        download_from_url(TEST_M3U8_URL, video_file)
+
+        # Verify file was created and has content
+        assert os.path.exists(video_file)
+        assert os.path.getsize(video_file) > 0
 
 
 class TestVideoToAudio:
