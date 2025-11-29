@@ -44,6 +44,10 @@ uv run pytest tests/test_rate_limiter.py
 uv run pytest -v
 ```
 
+### Contributing
+
+When making changes to this repository, follow the contribution guidelines in `CONTRIBUTING.md`.
+
 ### Releasing
 
 When creating a new release:
