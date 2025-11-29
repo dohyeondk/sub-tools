@@ -18,6 +18,9 @@ TEST_M3U8_URL = (
     "http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"
 )
 
+# Test HLS/m3u8 with separate audio and video streams (Apple test stream)
+TEST_M3U8_SEPARATE_AUDIO_URL = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8"
+
 
 @pytest.fixture
 def temp_output_dir():
@@ -94,6 +97,25 @@ class TestDownloadFromUrl:
         video_file = os.path.join(temp_output_dir, "test_hls_video.mp4")
 
         download_from_url(TEST_M3U8_URL, video_file)
+
+        # Verify file was created and has content
+        assert os.path.exists(video_file)
+        assert os.path.getsize(video_file) > 0
+
+    @pytest.mark.slow
+    def test_downloads_hls_with_separate_audio_streams(self, temp_output_dir):
+        """Test HLS/m3u8 stream with separate audio and video tracks.
+
+        This test uses Apple's test stream which has separate audio renditions
+        defined with EXT-X-MEDIA TYPE=AUDIO. FFmpeg should automatically handle
+        combining the audio and video streams into a single output file.
+
+        Note: This test is marked as slow because it downloads video content.
+        Run with: pytest -m slow
+        """
+        video_file = os.path.join(temp_output_dir, "test_separate_audio.mp4")
+
+        download_from_url(TEST_M3U8_SEPARATE_AUDIO_URL, video_file)
 
         # Verify file was created and has content
         assert os.path.exists(video_file)
