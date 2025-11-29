@@ -1,10 +1,13 @@
 from .arguments.parser import build_parser, parse_args
+from .config import config
 from .media.converter import download_from_url, media_to_signature, video_to_audio
-from .media.segmenter import segment_audio
-from .subtitles.combiner import combine_subtitles
 from .system.console import error, header, success
-from .system.directory import change_directory
-from .transcribe import transcribe
+from .system.directory import ensure_output_directory, get_temp_directory
+from .transcribe import (
+    proofread_with_gemini,
+    transcribe_with_whisperx,
+    translate_with_gemini,
+)
 
 
 def main():
@@ -12,7 +15,18 @@ def main():
     parsed = parse_args(parser)
 
     try:
-        change_directory(parsed.working_directory)
+        # Ensure output directory exists for final files
+        ensure_output_directory()
+
+        # Get temp directory for WIP files (URL-based if provided)
+        temp_dir = get_temp_directory(parsed.url)
+
+        # Create unified config
+        config.directory = temp_dir
+        config.output_file = parsed.output_file
+        config.gemini_api_key = parsed.gemini_api_key
+        config.gemini_model = parsed.model
+
         step = 1
 
         if "video" in parsed.tasks:
@@ -38,37 +52,21 @@ def main():
             success("Done!")
             step += 1
 
-        if "segment" in parsed.tasks:
-            header(f"{step}. Segment Audio")
-            segment_audio(
-                parsed.audio_file,
-                parsed.audio_segment_prefix,
-                parsed.audio_segment_format,
-                parsed.audio_segment_length,
-                parsed.overwrite,
-            )
-            success("Done!")
-            step += 1
-
         if "transcribe" in parsed.tasks:
             if not (parsed.gemini_api_key and parsed.gemini_api_key.strip()):
                 parsed.func()
                 raise Exception("No Gemini API Key provided")
-            header(f"{step}. Transcribe Audio")
-            transcribe(parsed)
+
+            header(f"{step}. Transcribe with WhisperX")
+            whisperx_srt_path = transcribe_with_whisperx(parsed)
             success("Done!")
-            step += 1
 
-        if "combine" in parsed.tasks:
-            header(f"{step}. Combine Subtitles")
-            from .subtitles.combiner import CombineConfig
+            header(f"{step}. Proofread with Gemini")
+            english_srt_path = proofread_with_gemini(parsed, whisperx_srt_path)
+            success("Done!")
 
-            combine_subtitles(
-                parsed.languages,
-                parsed.audio_segment_prefix,
-                parsed.audio_segment_format,
-                CombineConfig(output_file=parsed.output_file),
-            )
+            header(f"{step}. Translate to Target Languages")
+            translate_with_gemini(parsed, english_srt_path)
             success("Done!")
             step += 1
 
