@@ -80,11 +80,13 @@ async def _proofread_with_gemini(parsed, srt_path: str) -> str:
                 f.write(proofread_srt)
 
             return output_path
+        else:
+            raise Exception("Proofreading with Gemini returned no content.")
 
     except Exception as e:
         if parsed.debug:
             error(f"Error during proofreading: {str(e)}")
-        raise Exception(f"Proofreading failed: {str(e)}")
+        raise Exception(f"Proofreading failed: {str(e)}") from e
 
 
 def translate_with_gemini(parsed, english_srt_path: str) -> None:

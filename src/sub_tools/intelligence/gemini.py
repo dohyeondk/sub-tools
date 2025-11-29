@@ -178,8 +178,8 @@ async def _call_gemini_api(
                 continue
             else:
                 raise e
-        except Exception:
-            return None
+        except Exception as e:
+            raise e
     return None
 
 

@@ -20,7 +20,6 @@ def main():
 
         # Get temp directory for WIP files (URL-based if provided)
         temp_dir = get_temp_directory(parsed.url)
-        print(temp_dir)
 
         # Create unified config
         config.directory = temp_dir
