@@ -2,7 +2,6 @@
 Integration tests for media converter utilities using real test videos.
 """
 
-import os
 import pytest
 from sub_tools.media.converter import download_from_url, video_to_audio
 
@@ -10,7 +9,12 @@ from sub_tools.media.converter import download_from_url, video_to_audio
 TEST_VIDEO_URL = "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4"
 
 # Test HLS/m3u8 stream URL
-TEST_M3U8_URL = "http://cdnbakmi.kaltura.com/p/243342/sp/24334200/playManifest/entryId/0_uka1msg4/flavorIds/1_vqhfu6uy,1_80sohj7p/format/applehttp/protocol/http/a.m3u8"
+TEST_M3U8_URL = (
+    "http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"
+)
+
+# Test HLS/m3u8 with separate audio and video streams (Apple test stream)
+TEST_M3U8_SEPARATE_AUDIO_URL = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8"
 
 
 class TestDownloadFromUrl:
@@ -58,6 +62,15 @@ class TestDownloadFromUrl:
         """Test successful HLS/m3u8 stream download."""
         video_file = tmp_path / "test_hls_video.mp4"
         download_from_url(TEST_M3U8_URL, str(video_file))
+
+        assert video_file.exists()
+        assert video_file.stat().st_size > 0
+
+    @pytest.mark.slow
+    def test_downloads_hls_with_separate_audio_streams(self, tmp_path):
+        """Test HLS/m3u8 stream with separate audio and video tracks."""
+        video_file = tmp_path / "test_separate_audio.mp4"
+        download_from_url(TEST_M3U8_SEPARATE_AUDIO_URL, str(video_file))
 
         assert video_file.exists()
         assert video_file.stat().st_size > 0
