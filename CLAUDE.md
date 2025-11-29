@@ -26,7 +26,7 @@ uv sync
 uv run sub-tools -i <url> --languages en es fr
 
 # With local audio file
-uv run sub-tools --tasks segment transcribe combine --audio-file audio.mp3 --languages en
+uv run sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
 # Specify custom model
 uv run sub-tools -i <url> --languages en --model gemini-2.5-flash-preview-04-17
@@ -52,6 +52,10 @@ When creating a new release:
 3. Commit both files: `git commit -m "chore: Bump version to X.Y.Z"`
 4. Create and push tag: `git tag vX.Y.Z && git push origin main && git push origin vX.Y.Z`
 
+### Important: After Modifying pyproject.toml
+
+**Always run `uv sync` after making changes to `pyproject.toml`** to update the lock file (`uv.lock`). This ensures dependencies are properly resolved and the lock file stays in sync with the project configuration.
+
 ## Architecture
 
 ### Pipeline Overview
@@ -61,29 +65,19 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 1. **video**: Downloads media from URL (HLS or direct) → `output/video.mp4`
 2. **audio**: Extracts audio track → `output/audio.mp3`
 3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
-4. **segment**: Splits audio into chunks (default: 5 minutes each)
-5. **transcribe**: Parallel transcription using Gemini API
-6. **combine**: Merges individual SRT files into final output
+4. **transcribe**: Transcription using WhisperX (handles its own segmentation internally)
 
 ### Key Components
 
 **main.py**: Entry point that orchestrates the pipeline stages sequentially.
 
-**transcribe.py**: Async transcription engine
-- Processes all segments in parallel using `asyncio.gather()`
-- Built-in rate limiter (10 requests/60 seconds) prevents API throttling
-- Retry logic with exponential backoff for validation failures
+**transcribe.py**: Transcription engine
+- Uses WhisperX for high-quality speech recognition and word-level alignment
+- Handles multiple languages with automatic language detection
 - Progress tracking with Rich library
-
-**intelligence/client.py**: Gemini API integration
-- Converts audio segments to SRT format using Google GenAI SDK
-- Long, detailed system prompt ensures complete audio coverage and proper SRT formatting
-- Critical: Instructs model to transcribe ENTIRE audio file (common issue is stopping early)
-- Handles rate limit exceptions specifically
 
 **config.py**: Central configuration dataclass
 - Validation thresholds (max subtitle duration, gap thresholds)
-- Segmentation parameters (silence detection, min/max lengths)
 - Shared across all modules
 
 **arguments/parser.py**: CLI argument parsing
@@ -92,7 +86,6 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 **subtitles/**:
 - `validator.py`: Validates SRT timing, coverage, gaps
-- `combiner.py`: Merges segment SRTs with offset adjustments
 - `serializer.py`: Writes subtitle objects to .srt files
 
 **system/**:
@@ -103,53 +96,38 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 **media/**:
 - `converter.py`: FFmpeg wrapper for video/audio operations
-- `segmenter.py`: VAD-based audio splitting with silence detection
-- `info.py`: Audio file metadata extraction
 
 ### Important Implementation Details
 
 **URL-based Caching**: The tool creates temp directories based on URL hash (see `get_temp_directory()` in `system/directory.py`). This allows resuming interrupted transcriptions without re-processing.
 
-**Parallel Transcription**: Each language × segment combination runs as an independent async task. Rate limiting is global across all tasks.
-
-**Validation Strategy**: After each Gemini API call, subtitles are validated for:
-- Complete coverage of audio duration
-- No excessive gaps at beginning/end or between segments
-- Proper timestamp formatting
-- Reasonable subtitle duration (max 20 seconds)
-
-Invalid results trigger retry with exponential backoff. Debug logs are written to `{lang}_{offset}_*.log` when `--debug` is enabled.
-
-**Model Selection**: Default is `gemini-2.5-flash-lite` for cost efficiency. Users can override with `--model` parameter.
+**WhisperX Integration**: Uses WhisperX for state-of-the-art speech recognition with word-level timestamps. WhisperX handles audio segmentation internally using voice activity detection.
 
 ## Project Structure
 
 ```
 src/sub_tools/
 ├── main.py              # Pipeline orchestration
-├── transcribe.py        # Async transcription engine
+├── transcribe.py        # Transcription engine (WhisperX)
 ├── config.py            # Configuration dataclass
 ├── arguments/           # CLI parsing
-├── intelligence/        # Gemini API client
 ├── subtitles/           # SRT validation, combining, serialization
-├── media/               # FFmpeg operations, segmentation
+├── media/               # FFmpeg operations
 └── system/              # Rate limiting, logging, file management
 ```
 
 ## Dependencies
 
-- **google-genai**: Official Google Generative AI SDK (replaced OpenAI SDK in v0.7.0+)
-- **pydub**: Audio manipulation
-- **silero-vad**: Voice activity detection for segmentation
+- **whisperx**: Speech recognition with word-level alignment
 - **pysrt**: SRT file parsing
 - **rich**: Terminal UI and progress bars
 - **python-ffmpeg**: FFmpeg Python wrapper
+- **pycountry**: Language code handling
 
 ## Testing
 
 Test coverage focuses on core utilities:
 - `test_rate_limiter.py`: Async rate limiter correctness
-- `test_segmentor.py`: Audio segmentation logic
 - `test_directory.py`: File path handling
 
-No integration tests for API calls (would require API keys and be expensive).
+No integration tests for transcription (would require large audio files and be slow).
