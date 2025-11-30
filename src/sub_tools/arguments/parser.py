@@ -106,6 +106,7 @@ def build_parser() -> ArgumentParser:
     parser.add_argument(
         "--model",
         "-m",
+        dest="gemini_model",
         default=config.gemini_model,
         help="Gemini model to use for transcription (default: %(default)s).",
     )

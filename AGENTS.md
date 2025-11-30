@@ -33,7 +33,7 @@ uv run sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages
 uv run sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
 # Specify custom model
-uv run sub-tools -i <url> --languages en --model gemini-2.5-flash-preview-04-17
+uv run sub-tools -i <url> --languages en --model gemini-3-pro-preview
 ```
 
 ### Testing
