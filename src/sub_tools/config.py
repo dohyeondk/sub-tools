@@ -39,7 +39,7 @@ class Config:
     gemini_model: str = "gemini-2.5-flash-lite"
 
     # WhisperX
-    whisperx_model: str = "large-v3"  # WhisperX model to use
+    whisperx_model: str = "large-v2"  # WhisperX model to use
     whisperx_device: str = "cpu"  # Device for WhisperX inference (cpu, cuda)
     whisperx_compute_type: str = "int8"  # Compute type (int8, float16, float32)
     whisperx_batch_size: int = 16  # Batch size for WhisperX inference

@@ -182,13 +182,21 @@ async def _call_gemini_api(
     if text:
         parts.append(types.Part.from_text(text=text))
 
+    tools = [
+        types.Tool(google_search=types.GoogleSearch()),
+    ]
+
     for attempt in range(config.retry):
         try:
             response = await client.aio.models.generate_content(
                 model=config.gemini_model,
                 contents=parts,
                 config=types.GenerateContentConfig(
-                    system_instruction=system_instruction
+                    system_instruction=system_instruction,
+                    thinking_config=types.ThinkingConfig(
+                        include_thoughts=True, thinking_level=types.ThinkingLevel.HIGH
+                    ),
+                    tools=tools,
                 ),
             )
             text = response.text
