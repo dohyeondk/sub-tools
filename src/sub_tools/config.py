@@ -36,7 +36,7 @@ class Config:
 
     # Gemini
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash-lite"
+    gemini_model: str = "gemini-3-pro-preview"
 
     # WhisperX
     whisperx_model: str = "large-v2"  # WhisperX model to use

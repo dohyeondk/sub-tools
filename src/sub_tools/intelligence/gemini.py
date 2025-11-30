@@ -14,7 +14,7 @@ from ..config import config
 
 
 def proofread() -> None:
-    """Proofread the source SRT file with Gemini."""
+    """Proofread the source SRT file using Gemini."""
 
     if should_skip(f"{config.source_language}.srt"):
         return
@@ -23,7 +23,7 @@ def proofread() -> None:
 
 
 async def _proofread() -> None:
-    info("Proofreading with Gemini...")
+    info("Proofreading using Gemini...")
 
     language_code = config.source_language
     language = get_language_name(language_code)
@@ -65,7 +65,7 @@ async def _proofread() -> None:
 
 
 def translate() -> None:
-    """Translate the source SRT file with Gemini."""
+    """Translate the source SRT file using Gemini."""
 
     asyncio.run(_translate())
 
@@ -87,7 +87,7 @@ async def _translate() -> None:
     if not target_language_codes:
         return
 
-    info("Translating with Gemini...")
+    info("Translating using Gemini...")
 
     tasks = []
 
@@ -194,7 +194,8 @@ async def _call_gemini_api(
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
                     thinking_config=types.ThinkingConfig(
-                        include_thoughts=True, thinking_level=types.ThinkingLevel.HIGH
+                        include_thoughts=True,
+                        thinking_level=types.ThinkingLevel.HIGH,
                     ),
                     tools=tools,
                 ),

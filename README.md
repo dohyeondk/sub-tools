@@ -47,8 +47,8 @@ sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 # Specify custom tasks (available: video, audio, signature, transcribe, translate)
 sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
-# Specify a custom Gemini model (default: gemini-2.5-flash-lite)
-sub-tools -i https://example.com/video.mp4 --languages en --model gemini-2.5-flash-preview-04-17
+# Specify a custom Gemini model (default: gemini-3-pro-preview)
+sub-tools -i https://example.com/video.mp4 --languages en --model gemini-2.5-pro
 
 # Specify output directory (default: output)
 sub-tools -i https://example.com/video.mp4 --languages en --output my-subtitles
