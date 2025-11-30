@@ -55,10 +55,11 @@ async def _proofread() -> None:
     Return the proofread SRT file.
     """
 
+    file = _upload_file(config.audio_file)
     await _call_gemini_api(
         output_file=f"{language_code}.srt",
         system_instruction=system_instruction,
-        file=_upload_file(config.audio_file),
+        file=file,
         text=f"SRT to proofread:\n\n{srt_content}",
     )
 
