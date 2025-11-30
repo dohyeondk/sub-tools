@@ -39,18 +39,21 @@ async def _proofread() -> None:
     Your task is to:
     1. Listen to the audio carefully
     2. Compare it with the provided SRT transcription
-    3. Fix any transcription errors, mistakes, or inaccuracies
-    4. Maintain the exact same timing (timestamps) as the input SRT
+    3. Fix any obvious transcription errors, mistakes, or inaccuracies
+    4. Keep timestamps accurate - maintain exact timing as in the input SRT
     5. Improve punctuation and capitalization if needed
     6. Clean up filler words ("um", "uh", "like", "you know") if they appear incorrectly
     7. Fix any misheard words or phrases
+    8. Split long segments to ensure readability - no more than 2 lines visible at a time (max ~80 characters per line)
 
     CRITICAL REQUIREMENTS:
     1. Output ONLY the corrected SRT file. No code blocks, no explanations.
     2. Keep ALL timestamps exactly as they are in the input SRT
-    3. Preserve the SRT format perfectly (number, timestamp, text, blank line)
-    4. Only modify the text content, not the structure or timing
-    5. The output must be valid SRT format
+    3. If a segment is too long, you may split it into multiple segments with appropriate timing
+    4. Ensure no subtitle block exceeds 2 lines of text (~80 characters per line max)
+    5. Preserve the SRT format perfectly (number, timestamp, text, blank line)
+    6. Only modify the text content and split long segments when necessary
+    7. The output must be valid SRT format
 
     Return the proofread SRT file.
     """
@@ -182,13 +185,21 @@ async def _call_gemini_api(
     if text:
         parts.append(types.Part.from_text(text=text))
 
+    tools = [
+        types.Tool(google_search=types.GoogleSearch()),
+    ]
+
     for attempt in range(config.retry):
         try:
             response = await client.aio.models.generate_content(
                 model=config.gemini_model,
                 contents=parts,
                 config=types.GenerateContentConfig(
-                    system_instruction=system_instruction
+                    system_instruction=system_instruction,
+                    thinking_config=types.ThinkingConfig(
+                        include_thoughts=True, thinking_level=types.ThinkingLevel.HIGH
+                    ),
+                    tools=tools,
                 ),
             )
             text = response.text
