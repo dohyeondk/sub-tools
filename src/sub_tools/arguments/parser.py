@@ -2,6 +2,7 @@ import argparse
 from argparse import ArgumentParser, Namespace
 from importlib.metadata import version
 
+from ..config import apply_namespace, config
 from .env_default import EnvDefault
 
 
@@ -21,7 +22,7 @@ def build_parser() -> ArgumentParser:
         "--tasks",
         "-t",
         nargs="+",
-        default=["video", "audio", "signature", "transcribe"],
+        default=list(config.tasks),
         help="List of tasks to perform (default: %(default)s).",
     )
 
@@ -34,46 +35,56 @@ def build_parser() -> ArgumentParser:
     )
 
     parser.add_argument(
-        "-v",
         "--video-file",
-        default="output/video.mp4",
-        help="Path to the video file (default: %(default)s).",
+        default=config.video_file,
+        help="Filename for the downloaded video inside the output directory (default: %(default)s).",
     )
 
     parser.add_argument(
-        "-a",
         "--audio-file",
-        default="output/audio.mp3",
-        help="Path to the audio file (default: %(default)s).",
+        default=config.audio_file,
+        help="Filename for the extracted audio inside the output directory (default: %(default)s).",
     )
 
     parser.add_argument(
-        "-s",
         "--signature-file",
-        default="output/message.shazamsignature",
-        help="Path to the Shazam signature file (default: %(default)s).",
+        default=config.signature_file,
+        help="Filename for the Shazam signature inside the output directory (default: %(default)s).",
+    )
+
+    parser.add_argument(
+        "--srt-file",
+        default=config.srt_file,
+        help="Filename for the generated subtitle file inside the output directory (default: %(default)s).",
+    )
+
+    parser.add_argument(
+        "--source-language",
+        default=config.source_language,
+        help="Source language code. (default: %(default)s).",
     )
 
     parser.add_argument(
         "-l",
         "--languages",
         nargs="+",  # allows multiple values, e.g. --languages en es fr
-        default=["en"],
+        default=list(config.languages),
         help="List of language codes, e.g. --languages en es fr (default: %(default)s).",
     )
 
     parser.add_argument(
         "-o",
         "--output",
-        dest="output_file",
-        default=None,
-        help="Custom output filename for combined subtitles (e.g., 'output.srt'). Language code will be inserted before extension.",
+        dest="output_directory",
+        default=config.output_directory,
+        help="Directory where generated files will be saved (default: %(default)s).",
     )
 
     parser.add_argument(
         "--overwrite",
         "-y",
         action="store_true",
+        default=config.overwrite,
         help="If given, overwrite the output file if it already exists.",
     )
 
@@ -81,7 +92,7 @@ def build_parser() -> ArgumentParser:
         "--retry",
         "-r",
         type=int,
-        default=50,
+        default=config.retry,
         help="Number of times to retry the tasks (default: %(default)s).",
     )
 
@@ -95,11 +106,16 @@ def build_parser() -> ArgumentParser:
     parser.add_argument(
         "--model",
         "-m",
-        default="gemini-2.5-flash-lite",
+        default=config.gemini_model,
         help="Gemini model to use for transcription (default: %(default)s).",
     )
 
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=config.debug,
+        help="Enable debug mode.",
+    )
 
     parser.add_argument(
         "--version",
@@ -118,4 +134,5 @@ def build_parser() -> ArgumentParser:
 
 def parse_args(parser: ArgumentParser) -> Namespace:
     parsed = parser.parse_args()
+    apply_namespace(parsed)
     return parsed

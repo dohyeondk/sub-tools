@@ -1,33 +1,40 @@
 import asyncio
-import re
-from typing import Optional, Union
+from typing import Callable, Optional
 
 from google import genai
 from google.api_core import exceptions as google_exceptions
 from google.genai import types
+from rich.progress import Progress
+
+from sub_tools.system.console import info
+from sub_tools.system.file import should_skip
+from sub_tools.system.language import get_language_name
 
 from ..config import config
 
 
-async def proofread_srt_with_gemini(
-    audio_path: str,
-    audio_format: str,
-    srt_content: str,
-) -> Union[str, None]:
-    """
-    Proofread an SRT file using Gemini with audio as reference.
+def proofread() -> None:
+    """Proofread the source SRT file with Gemini."""
 
-    Args:
-        audio_path: Path to the audio file
-        audio_format: Audio file format (mp3, wav, etc.)
-        srt_content: Content of the SRT file to proofread
+    if should_skip(f"{config.source_language}.srt"):
+        return
 
-    Returns:
-        Proofread SRT content, or None if proofreading failed
-    """
-    system_instruction = """
+    asyncio.run(_proofread())
+
+
+async def _proofread() -> None:
+    info("Proofreading with Gemini...")
+
+    language_code = config.source_language
+    language = get_language_name(language_code)
+
+    srt_file = config.srt_file
+    with open(srt_file, "r", encoding="utf-8") as f:
+        srt_content = f.read()
+
+    system_instruction = f"""
     You are a professional transcription proofreader.
-    You will receive an English SRT subtitle file and the corresponding audio file.
+    You will receive an {language} SRT subtitle file and the corresponding audio file.
 
     Your task is to:
     1. Listen to the audio carefully
@@ -48,38 +55,82 @@ async def proofread_srt_with_gemini(
     Return the proofread SRT file.
     """
 
-    return await _call_gemini_api(
+    await _call_gemini_api(
+        output_file=f"{language_code}.srt",
         system_instruction=system_instruction,
-        audio_path=audio_path,
-        audio_format=audio_format,
-        text_input=f"SRT to proofread:\n\n{srt_content}",
+        file=_upload_file(config.audio_file),
+        text=f"SRT to proofread:\n\n{srt_content}",
     )
 
 
-async def translate_srt_with_gemini(
-    audio_path: str,
-    audio_format: str,
+def translate() -> None:
+    """Translate the source SRT file with Gemini."""
+
+    asyncio.run(_translate())
+
+
+async def _translate() -> None:
+    language_code = config.source_language
+
+    srt_file = f"{language_code}.srt"
+    with open(srt_file, "r", encoding="utf-8") as f:
+        srt_content = f.read()
+
+    # Filter out source language from target languages
+    target_language_codes = [
+        lang
+        for lang in config.languages
+        if lang != language_code and not should_skip(f"{lang}.srt")
+    ]
+
+    if not target_language_codes:
+        return
+
+    info("Translating with Gemini...")
+
+    tasks = []
+
+    with Progress() as progress:
+        progress_task = progress.add_task(
+            "Translation", total=len(target_language_codes)
+        )
+
+        file = _upload_file(config.audio_file)
+
+        for language_code in target_language_codes:
+            if should_skip(f"{language_code}.srt"):
+                continue
+
+            task = asyncio.create_task(
+                _translate_language(
+                    file=file,
+                    srt_content=srt_content,
+                    source_language_code=config.source_language,
+                    target_language_code=language_code,
+                    completion=lambda: progress.update(progress_task, advance=1),
+                )
+            )
+            tasks.append(task)
+
+        await asyncio.gather(*tasks)
+
+
+async def _translate_language(
+    file: types.File,
     srt_content: str,
-    target_language: str,
-) -> Union[str, None]:
-    """
-    Translate an English SRT file to target language using Gemini with audio as reference.
+    source_language_code: str,
+    target_language_code: str,
+    completion: Callable[[], None],
+) -> None:
+    source_language = get_language_name(source_language_code)
+    target_language = get_language_name(target_language_code)
 
-    Args:
-        audio_path: Path to the audio file
-        audio_format: Audio file format (mp3, wav, etc.)
-        srt_content: Content of the English SRT file to translate
-        target_language: Target language name (e.g., "Spanish", "French")
-
-    Returns:
-        Translated SRT content, or None if translation failed
-    """
     system_instruction = f"""
     You are a professional translator specializing in subtitle translation.
-    You will receive an English SRT subtitle file and the corresponding audio file.
+    You will receive an {source_language} SRT subtitle file and the corresponding audio file.
 
     Your task is to:
-    1. Translate the English subtitles to {target_language}
+    1. Translate the {source_language} subtitles to {target_language}
     2. Listen to the audio to understand context and tone
     3. Maintain the exact same timing (timestamps) as the input SRT
     4. Ensure translations are natural and culturally appropriate for {target_language}
@@ -95,7 +146,7 @@ async def translate_srt_with_gemini(
 
     Translation Guidelines:
     - Use natural, conversational {target_language}
-    - Preserve the tone and meaning of the original English
+    - Preserve the tone and meaning of the original {source_language}
     - Keep proper names in their original form unless they have standard {target_language} equivalents
     - Maintain [sound effects] in brackets
     - Use appropriate punctuation for {target_language}
@@ -103,20 +154,20 @@ async def translate_srt_with_gemini(
     Return the translated SRT file in {target_language}.
     """
 
-    return await _call_gemini_api(
+    await _call_gemini_api(
+        output_file=f"{target_language_code}.srt",
         system_instruction=system_instruction,
-        audio_path=audio_path,
-        audio_format=audio_format,
-        text_input=f"English SRT to translate:\n\n{srt_content}",
+        file=file,
+        text=f"{source_language} SRT to translate:\n\n{srt_content}",
     )
 
 
 async def _call_gemini_api(
+    output_file: str,
     system_instruction: str,
-    audio_path: Optional[str] = None,
-    audio_format: Optional[str] = None,
-    text_input: Optional[str] = None,
-) -> Optional[str]:
+    file: Optional[types.File] = None,
+    text: Optional[str] = None,
+) -> None:
     """
     Helper method to call Gemini API with retries for rate limits.
     """
@@ -124,55 +175,28 @@ async def _call_gemini_api(
 
     # Build parts for the content
     parts = []
+    if file:
+        parts.append(file)
+    if text:
+        parts.append(types.Part.from_text(text=text))
 
-    if audio_path and audio_format:
-        # Read audio file
-        with open(audio_path, "rb") as audio_file:
-            audio_data = audio_file.read()
-
-        mime_type_map = {
-            "mp3": "audio/mpeg",
-            "wav": "audio/wav",
-            "flac": "audio/flac",
-            "aac": "audio/aac",
-            "ogg": "audio/ogg",
-            "opus": "audio/opus",
-        }
-        mime_type = mime_type_map.get(audio_format.lower(), f"audio/{audio_format}")
-        parts.append(types.Part.from_bytes(data=audio_data, mime_type=mime_type))
-
-    if text_input:
-        parts.append(types.Part.from_text(text=text_input))
-
-    # Create content with proper structure
-    contents = [
-        types.Content(
-            role="user",
-            parts=parts,
-        ),
-    ]
-
-    # Create generation config with system instruction
-    generate_content_config = types.GenerateContentConfig(
-        system_instruction=[
-            types.Part.from_text(text=system_instruction),
-        ],
-    )
-
-    for attempt in range(config.gemini_max_retries):
+    for attempt in range(config.retry):
         try:
             response = await client.aio.models.generate_content(
                 model=config.gemini_model,
-                contents=contents,
-                config=generate_content_config,
+                contents=parts,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction
+                ),
             )
             text = response.text
-            text = _remove_unneeded_characters(text)
-            text = _fix_invalid_timestamp(text)
-            return text
+            if text:
+                with open(output_file, "w") as f:
+                    f.write(text)
+                return
 
         except google_exceptions.ResourceExhausted as e:
-            if attempt < config.gemini_max_retries - 1:
+            if attempt < config.retry - 1:
                 wait_time = 2**attempt  # Exponential backoff: 1, 2, 4 seconds
                 await asyncio.sleep(wait_time)
                 continue
@@ -180,29 +204,9 @@ async def _call_gemini_api(
                 raise e
         except Exception as e:
             raise e
-    return None
 
 
-def _remove_unneeded_characters(text: Union[str, None]) -> str:
-    """Remove common wrappers like code fences and stray language tags without altering SRT content."""
-    if text is None:
-        return ""
-
-    cleaned = text.strip()
-
-    # Remove leading code fence with optional language (e.g., ```srt or ```SRT)
-    cleaned = re.sub(r"^```\s*[a-zA-Z0-9_-]*\s*\n", "", cleaned, count=1)
-    # Remove trailing code fence
-    cleaned = re.sub(r"\n?```\s*$", "", cleaned, count=1)
-
-    # Remove a bare leading language tag without fences (e.g., 'srt' or 'SRT')
-    cleaned = re.sub(r"^(?:srt|SRT)\s*\n", "", cleaned, count=1)
-
-    return cleaned.strip()
-
-
-def _fix_invalid_timestamp(text: str) -> str:
-    pattern = re.compile(
-        r"^(\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2},\d{3})$", flags=re.MULTILINE
-    )
-    return pattern.sub(r"00:\1 --> 00:\2", text)
+def _upload_file(file_path: str) -> types.File:
+    client = genai.Client(api_key=config.gemini_api_key)
+    file = client.files.upload(file=file_path)
+    return file

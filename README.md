@@ -3,13 +3,16 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A robust Python toolkit powered by Google's Gemini API for converting video content into accurate, multilingual subtitles.
+A robust Python toolkit for converting video/audio content into accurate, multilingual subtitles using WhisperX for transcription and Google's Gemini API for proofreading and translation.
 
 ## ✨ Features
 
-- 📝 Subtitle generation from video/audio URLs (HLS streams or direct file downloads).
-- 📚 Subtitle validation and quality control.
-- 🎵 Audio fingerprinting and analysis using Shazam (macOS only).
+- 🎯 High-quality transcription using WhisperX with word-level alignment
+- 🔍 AI-powered proofreading with Gemini to fix transcription errors
+- 🌍 Multilingual translation support
+- 📥 Support for HLS streams, direct file URLs, and local files
+- 🎵 Audio fingerprinting using Shazam (macOS only)
+- 📊 Progress tracking with rich terminal output
 
 ## 🚀 Quick Start
 
@@ -29,21 +32,39 @@ pip install sub-tools
 ```shell
 export GEMINI_API_KEY={your_api_key}
 
+# Full pipeline: download video, extract audio, transcribe, proofread, and translate
+sub-tools -i https://example.com/video.mp4 --languages en es fr
+
 # Using HLS stream URL
 sub-tools -i https://example.com/hls/video.m3u8 --languages en es fr
 
-# Using direct video file URL
-sub-tools -i https://example.com/video.mp4 --languages en es fr
+# Using local audio file (skip video/audio tasks)
+sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages en es fr
 
-# Using direct audio file URL
-sub-tools -i https://example.com/audio.mp3 --languages en es fr
+# Only transcribe without translation
+sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
-# Using local MP3 file
-sub-tools --tasks segment transcribe combine --audio-file audio.mp3 --languages en es fr
+# Specify custom tasks (available: video, audio, signature, transcribe, translate)
+sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
 # Specify a custom Gemini model (default: gemini-2.5-flash-lite)
 sub-tools -i https://example.com/video.mp4 --languages en --model gemini-2.5-flash-preview-04-17
+
+# Specify output directory (default: output)
+sub-tools -i https://example.com/video.mp4 --languages en --output my-subtitles
 ```
+
+### Pipeline Tasks
+
+The tool operates as a multi-stage pipeline controlled by the `--tasks` parameter:
+
+1. **video**: Downloads media from URL (HLS or direct) → `video.mp4`
+2. **audio**: Extracts audio track → `audio.mp3`
+3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
+4. **transcribe**: Transcription using WhisperX → `transcript.srt`
+5. **translate**: Proofreads and translates to target languages using Gemini → `{language}.srt`
+
+By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
 ### Build Docker
 
@@ -54,21 +75,15 @@ docker run -v $(pwd)/output:/app/output sub-tools sub-tools --gemini-api-key GEM
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/{feature-name}`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/{feature-name}`)
-5. Open a Pull Request
-
-### Prerequisites
-
-- [uv](https://github.com/astral-sh/uv)
-
-### Development Setup
+### Quick Development Setup
 
 ```shell
+# Install uv package manager
+# https://github.com/astral-sh/uv
+
+# Clone and setup
 git clone https://github.com/dohyeondk/sub-tools.git
 cd sub-tools
 uv sync
