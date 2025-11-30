@@ -202,7 +202,7 @@ async def _call_gemini_api(
             )
             text = response.text
             if text:
-                with open(output_file, "w") as f:
+                with open(output_file, "w", encoding="utf-8") as f:
                     f.write(text)
                 return
 
