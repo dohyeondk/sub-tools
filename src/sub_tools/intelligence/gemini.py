@@ -161,6 +161,7 @@ async def _translate_language(
         file=file,
         text=f"{source_language} SRT to translate:\n\n{srt_content}",
     )
+    completion()
 
 
 async def _call_gemini_api(
