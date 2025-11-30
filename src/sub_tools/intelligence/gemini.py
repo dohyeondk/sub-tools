@@ -1,4 +1,9 @@
 import asyncio
+import logging
+import os
+import sys
+import warnings
+from contextlib import contextmanager
 from typing import Callable, Optional
 
 from google import genai
@@ -14,7 +19,7 @@ from ..config import config
 
 
 def proofread() -> None:
-    """Proofread the source SRT file with Gemini."""
+    """Proofread the source SRT file using Gemini."""
 
     if should_skip(f"{config.source_language}.srt"):
         return
@@ -23,7 +28,7 @@ def proofread() -> None:
 
 
 async def _proofread() -> None:
-    info("Proofreading with Gemini...")
+    info("Proofreading using Gemini...")
 
     language_code = config.source_language
     language = get_language_name(language_code)
@@ -65,7 +70,7 @@ async def _proofread() -> None:
 
 
 def translate() -> None:
-    """Translate the source SRT file with Gemini."""
+    """Translate the source SRT file using Gemini."""
 
     asyncio.run(_translate())
 
@@ -87,7 +92,7 @@ async def _translate() -> None:
     if not target_language_codes:
         return
 
-    info("Translating with Gemini...")
+    info("Translating using Gemini...")
 
     tasks = []
 
@@ -114,6 +119,57 @@ async def _translate() -> None:
             tasks.append(task)
 
         await asyncio.gather(*tasks)
+
+
+@contextmanager
+def _suppress_gemini_output():
+    """
+    Context manager to suppress all Gemini API output unless in debug mode.
+
+    Suppresses:
+    - All warnings from google.genai and related libraries
+    - All logging output from these libraries
+    - All stdout/stderr output
+    """
+    if config.debug:
+        yield
+        return
+
+    # Suppress warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+
+        # Suppress logging
+        logging_modules = [
+            "google",
+            "google.genai",
+            "google.api_core",
+            "grpc",
+        ]
+        original_levels = {}
+        for module_name in logging_modules:
+            logger = logging.getLogger(module_name)
+            original_levels[module_name] = logger.level
+            logger.setLevel(logging.ERROR)
+
+        # Suppress stdout/stderr
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+
+        with open(os.devnull, "w") as devnull:
+            sys.stdout = devnull
+            sys.stderr = devnull
+
+            try:
+                yield
+            finally:
+                # Restore stdout/stderr
+                sys.stdout = original_stdout
+                sys.stderr = original_stderr
+
+                # Restore logging levels
+                for module_name, level in original_levels.items():
+                    logging.getLogger(module_name).setLevel(level)
 
 
 async def _translate_language(
@@ -173,50 +229,53 @@ async def _call_gemini_api(
     """
     Helper method to call Gemini API with retries for rate limits.
     """
-    client = genai.Client(api_key=config.gemini_api_key)
+    with _suppress_gemini_output():
+        client = genai.Client(api_key=config.gemini_api_key)
 
-    # Build parts for the content
-    parts = []
-    if file:
-        parts.append(file)
-    if text:
-        parts.append(types.Part.from_text(text=text))
+        # Build parts for the content
+        parts = []
+        if file:
+            parts.append(file)
+        if text:
+            parts.append(types.Part.from_text(text=text))
 
-    tools = [
-        types.Tool(google_search=types.GoogleSearch()),
-    ]
+        tools = [
+            types.Tool(google_search=types.GoogleSearch()),
+        ]
 
-    for attempt in range(config.retry):
-        try:
-            response = await client.aio.models.generate_content(
-                model=config.gemini_model,
-                contents=parts,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    thinking_config=types.ThinkingConfig(
-                        include_thoughts=True, thinking_level=types.ThinkingLevel.HIGH
+        for attempt in range(config.retry):
+            try:
+                response = await client.aio.models.generate_content(
+                    model=config.gemini_model,
+                    contents=parts,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        thinking_config=types.ThinkingConfig(
+                            include_thoughts=True,
+                            thinking_level=types.ThinkingLevel.HIGH,
+                        ),
+                        tools=tools,
                     ),
-                    tools=tools,
-                ),
-            )
-            text = response.text
-            if text:
-                with open(output_file, "w") as f:
-                    f.write(text)
-                return
+                )
+                text = response.text
+                if text:
+                    with open(output_file, "w") as f:
+                        f.write(text)
+                    return
 
-        except google_exceptions.ResourceExhausted as e:
-            if attempt < config.retry - 1:
-                wait_time = 2**attempt  # Exponential backoff: 1, 2, 4 seconds
-                await asyncio.sleep(wait_time)
-                continue
-            else:
+            except google_exceptions.ResourceExhausted as e:
+                if attempt < config.retry - 1:
+                    wait_time = 2**attempt  # Exponential backoff: 1, 2, 4 seconds
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    raise e
+            except Exception as e:
                 raise e
-        except Exception as e:
-            raise e
 
 
 def _upload_file(file_path: str) -> types.File:
-    client = genai.Client(api_key=config.gemini_api_key)
-    file = client.files.upload(file=file_path)
-    return file
+    with _suppress_gemini_output():
+        client = genai.Client(api_key=config.gemini_api_key)
+        file = client.files.upload(file=file_path)
+        return file
