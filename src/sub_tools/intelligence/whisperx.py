@@ -7,7 +7,6 @@ from ..subtitles.serializer import serialize_subtitles
 
 
 def transcribe() -> None:
-    print(config.srt_file)
     if should_skip(config.srt_file):
         return
 
@@ -17,6 +16,7 @@ def transcribe() -> None:
             config.whisperx_model,
             device=config.whisperx_device,
             compute_type=config.whisperx_compute_type,
+            language=config.source_language,
         )
 
         # Transcribe audio
