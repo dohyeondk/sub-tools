@@ -1,15 +1,16 @@
-"""
-Integration tests for media converter utilities using real test videos.
-"""
-
 import pytest
+
+from sub_tools.config import config
 from sub_tools.media.converter import download_from_url, video_to_audio
 
 # Test video URL - 10 second Big Buck Bunny sample (1MB)
 TEST_VIDEO_URL = "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4"
 
 # Test HLS/m3u8 stream URL
-TEST_M3U8_URL = "http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"
+TEST_M3U8_URL = (
+    "http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"
+)
+
 
 class TestDownloadFromUrl:
     """Integration tests for download_from_url function using real video."""
@@ -17,7 +18,12 @@ class TestDownloadFromUrl:
     def test_downloads_video_successfully(self, tmp_path):
         """Test successful video download from real URL."""
         video_file = tmp_path / "test_video.mp4"
-        download_from_url(TEST_VIDEO_URL, video_file)
+
+        config.url = TEST_VIDEO_URL
+        config.video_file = str(video_file)
+        config.overwrite = True
+
+        download_from_url()
 
         assert video_file.exists()
         assert video_file.stat().st_size > 0
@@ -28,7 +34,11 @@ class TestDownloadFromUrl:
         video_file.write_text("existing content")
         original_mtime = video_file.stat().st_mtime
 
-        download_from_url(TEST_VIDEO_URL, str(video_file), overwrite=False)
+        config.url = TEST_VIDEO_URL
+        config.video_file = str(video_file)
+        config.overwrite = False
+
+        download_from_url()
 
         assert video_file.read_text() == "existing content"
         assert video_file.stat().st_mtime == original_mtime
@@ -38,7 +48,11 @@ class TestDownloadFromUrl:
         video_file = tmp_path / "existing_video.mp4"
         video_file.write_text("existing content")
 
-        download_from_url(TEST_VIDEO_URL, str(video_file), overwrite=True)
+        config.url = TEST_VIDEO_URL
+        config.video_file = str(video_file)
+        config.overwrite = True
+
+        download_from_url()
 
         assert video_file.exists()
         assert video_file.stat().st_size > 100  # Much larger than "existing content"
@@ -48,17 +62,27 @@ class TestDownloadFromUrl:
         video_file = tmp_path / "invalid.mp4"
         invalid_url = "https://example.com/nonexistent-video-12345.mp4"
 
+        config.url = invalid_url
+        config.video_file = str(video_file)
+        config.overwrite = True
+
         with pytest.raises(RuntimeError, match="Failed to download media"):
-            download_from_url(invalid_url, str(video_file))
+            download_from_url()
 
     @pytest.mark.slow
     def test_downloads_hls_stream_successfully(self, tmp_path):
         """Test successful HLS/m3u8 stream download."""
         video_file = tmp_path / "test_hls_video.mp4"
-        download_from_url(TEST_M3U8_URL, str(video_file))
+
+        config.url = TEST_M3U8_URL
+        config.video_file = str(video_file)
+        config.overwrite = True
+
+        download_from_url()
 
         assert video_file.exists()
         assert video_file.stat().st_size > 0
+
 
 class TestVideoToAudio:
     """Integration tests for video_to_audio function."""
@@ -68,13 +92,19 @@ class TestVideoToAudio:
         video_file = tmp_path / "test_video.mp4"
         audio_file = tmp_path / "existing_audio.mp3"
 
-        # Download test video first
-        download_from_url(TEST_VIDEO_URL, str(video_file))
+        config.url = TEST_VIDEO_URL
+        config.video_file = str(video_file)
+        config.overwrite = True
+
+        download_from_url()
 
         audio_file.write_text("existing audio content")
         original_mtime = audio_file.stat().st_mtime
 
-        video_to_audio(str(video_file), str(audio_file), overwrite=False)
+        config.audio_file = str(audio_file)
+        config.overwrite = False
+
+        video_to_audio()
 
         assert audio_file.read_text() == "existing audio content"
         assert audio_file.stat().st_mtime == original_mtime

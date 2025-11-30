@@ -5,7 +5,7 @@ This file provides guidance to agents when working with code in this repository.
 
 ## Project Overview
 
-sub-tools is a Python toolkit for converting video/audio content into accurate, multilingual subtitles using Google's Gemini API. The tool supports HLS streams, direct file URLs, and local files.
+sub-tools is a Python toolkit for converting video/audio content into accurate, multilingual subtitles using WhisperX for transcription and Google's Gemini API for proofreading and translation. The tool supports HLS streams, direct file URLs, and local files.
 
 ## Development Setup
 
@@ -23,10 +23,13 @@ uv sync
 
 ### Running the tool
 ```bash
-# Using installed package
+# Using installed package (full pipeline)
 uv run sub-tools -i <url> --languages en es fr
 
-# With local audio file
+# With local audio file (skip video/audio tasks)
+uv run sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages en
+
+# Only transcribe without translation
 uv run sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
 # Specify custom model
@@ -37,9 +40,6 @@ uv run sub-tools -i <url> --languages en --model gemini-2.5-flash-preview-04-17
 ```bash
 # Run all tests
 uv run pytest -m "not slow"
-
-# Run specific test file
-uv run pytest tests/test_rate_limiter.py
 
 # Run with verbose output
 uv run pytest -v
@@ -71,15 +71,20 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 2. **audio**: Extracts audio track → `output/audio.mp3`
 3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
 4. **transcribe**: Transcription using WhisperX (handles its own segmentation internally)
+5. **translate**: Proofreads and translates transcription using Gemini
 
 ### Key Components
 
 **main.py**: Entry point that orchestrates the pipeline stages sequentially.
 
-**transcribe.py**: Transcription engine
-- Uses WhisperX for high-quality speech recognition and word-level alignment
-- Handles multiple languages with automatic language detection
-- Progress tracking with Rich library
+**intelligence/whisperx.py**: Transcription using WhisperX
+- High-quality speech recognition with word-level alignment
+- Uses config for all parameters (audio_file, source_language, model settings)
+
+**intelligence/gemini.py**: Proofreading and translation using Gemini
+- Proofread function: Fixes transcription errors using audio as reference
+- Translate function: Translates to multiple target languages
+- Uses config for all parameters (audio_file, languages, API key)
 
 **config.py**: Central configuration dataclass
 - Validation thresholds (max subtitle duration, gap thresholds)
@@ -94,45 +99,47 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 - `serializer.py`: Writes subtitle objects to .srt files
 
 **system/**:
-- `rate_limiter.py`: Async token bucket rate limiter with lock-based concurrency control
 - `directory.py`: Manages temp directories (URL-based caching in system temp)
 - `console.py`: Rich-based CLI output formatting
 - `language.py`: ISO language code to human-readable name mapping
 
 **media/**:
-- `converter.py`: FFmpeg wrapper for video/audio operations
+- `converter.py`: FFmpeg wrapper for video/audio operations (all functions use config)
 
 ### Important Implementation Details
 
-**URL-based Caching**: The tool creates temp directories based on URL hash (see `get_temp_directory()` in `system/directory.py`). This allows resuming interrupted transcriptions without re-processing.
+**Config-Based Architecture**: All functions use the global config object instead of parameters. Functions like `download_from_url()`, `video_to_audio()`, `transcribe()`, `proofread()`, and `translate()` take no parameters and get values from `config`.
 
 **WhisperX Integration**: Uses WhisperX for state-of-the-art speech recognition with word-level timestamps. WhisperX handles audio segmentation internally using voice activity detection.
+
+**Gemini Integration**: Uses Gemini API with audio files as reference for both proofreading transcriptions and translating to target languages.
 
 ## Project Structure
 
 ```
 src/sub_tools/
 ├── main.py              # Pipeline orchestration
-├── transcribe.py        # Transcription engine (WhisperX)
 ├── config.py            # Configuration dataclass
 ├── arguments/           # CLI parsing
-├── subtitles/           # SRT validation, combining, serialization
-├── media/               # FFmpeg operations
-└── system/              # Rate limiting, logging, file management
+├── intelligence/        # Transcription and translation
+│   ├── whisperx.py      # WhisperX transcription
+│   └── gemini.py        # Gemini proofreading and translation
+├── subtitles/           # SRT validation and serialization
+├── media/               # FFmpeg operations (video/audio conversion)
+└── system/              # Console, directory, file utilities
 ```
 
 ## Dependencies
 
 - **whisperx**: Speech recognition with word-level alignment
-- **pysrt**: SRT file parsing
+- **google-genai**: Google Gemini API for proofreading and translation
 - **rich**: Terminal UI and progress bars
-- **python-ffmpeg**: FFmpeg Python wrapper
+- **ffmpeg** (system dependency): Video/audio conversion
 - **pycountry**: Language code handling
 
 ## Testing
 
 Test coverage focuses on core utilities:
-- `test_rate_limiter.py`: Async rate limiter correctness
 - `test_directory.py`: File path handling
 
 No integration tests for transcription (would require large audio files and be slow).
