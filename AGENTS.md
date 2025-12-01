@@ -1,4 +1,3 @@
-@@ -1,137 +0,0 @@
 # AGENTS.md
 
 This file provides guidance to agents when working with code in this repository.
