@@ -66,6 +66,36 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
+## 📏 Transcription evaluation
+
+The evaluator is deliberately separate from model execution: it scores generated SRT
+files against a human reference so multiple runs can be compared on identical input.
+It reports WER/CER, accuracy, anchor timing error and drift, lexical F1, coverage and
+gaps, subtitle structure/readability, repetition/boilerplate signals, and hard gates.
+
+Give each hypothesis a stable name with `NAME=PATH`; repeat `--hypothesis` to compare
+models or pipeline stages:
+
+```shell
+sub-tools-eval \
+  --duration 356.133 \
+  --reference reference/en.srt \
+  --hypothesis whisperx=output/transcript.srt \
+  --hypothesis gemini-3.7=output/gemini-3.7/en.srt \
+  --hypothesis gemini-3.6=output/gemini-3.6/en.srt \
+  --output evals/transcription.json \
+  --markdown evals/transcription.md
+```
+
+Use `--audio-file clip.mp3` instead of `--duration` when `ffprobe` is available. The
+reference and audio are inputs to the evaluation and are intentionally not bundled in
+the package; this keeps private or copyrighted recordings out of the repository.
+
+`sub-tools-eval` measures the output of the full pipeline, while `sub-tools` remains
+responsible for producing the SRT. In particular, Gemini proofreading is evaluated with
+the timestamps WhisperX produced, so timing results belong to the assembled pipeline,
+not to Gemini alone.
+
 ### Build Docker
 
 ```shell
@@ -94,6 +124,9 @@ uv sync
 ```shell
 uv run pytest -m "not slow"
 ```
+
+The evaluation metrics have unit tests in `tests/test_evaluation.py` and do not require
+an API key or an audio file.
 
 ## 📝 License
 

@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 sub-tools = "sub_tools:main"
+sub-tools-eval = "sub_tools.evaluation.cli:main"
 
 [build-system]
 requires = ["hatchling"]
