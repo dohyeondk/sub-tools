@@ -70,8 +70,21 @@ By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
 The evaluator is deliberately separate from model execution: it scores generated SRT
 files against a human reference so multiple runs can be compared on identical input.
-It reports WER/CER, accuracy, anchor timing error and drift, lexical F1, coverage and
-gaps, subtitle structure/readability, repetition/boilerplate signals, and hard gates.
+The primary score is the published [SubER method](https://aclanthology.org/2022.iwslt-1.1/),
+implemented by the pinned [`subtitle-edit-rate==0.4.0`](https://pypi.org/project/subtitle-edit-rate/)
+package. SubER is reference-based and accounts for subtitle text, segmentation, and
+timing; lower is better. It is a published academic method and reference
+implementation, not an NIST certification.
+
+The report also includes `AS-WER` and `AS-CER`, which are the package's
+automatic-segmentation lexical diagnostics for SRTs with different cue boundaries.
+They use the same substitution/insertion/deletion edit-rate convention documented in
+[NIST SCTK/SCLITE](https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm),
+but this command does not invoke SCTK itself. The old `accuracy`, `wer`, `cer`, and
+0–100 composite (`heuristic_score`) remain as project diagnostics; they are not
+standardized benchmark scores. Coverage, anchor
+timing, readability, repetition, and hard gates are engineering checks for this
+product and should be compared only across variants on the same fixture.
 
 Give each hypothesis a stable name with `NAME=PATH`; repeat `--hypothesis` to compare
 models or pipeline stages:

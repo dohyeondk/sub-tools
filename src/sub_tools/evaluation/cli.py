@@ -7,7 +7,13 @@ import json
 from pathlib import Path
 import sys
 
-from .transcription import audio_duration_seconds, evaluate_transcription, load_srt
+from .transcription import (
+    EVALUATION_METHODOLOGY,
+    authoritative_metrics,
+    audio_duration_seconds,
+    evaluate_transcription,
+    load_srt,
+)
 
 
 def _hypothesis(value: str) -> tuple[str, Path]:
@@ -44,8 +50,8 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _percent(value: float | None, digits: int = 1) -> str:
-    return "—" if value is None else f"{value * 100:.{digits}f}%"
+def _score(value: float | None, digits: int = 1) -> str:
+    return "—" if value is None else f"{value:.{digits}f}"
 
 
 def _milliseconds(value: float | None) -> str:
@@ -58,24 +64,27 @@ def _markdown(report: dict) -> str:
         "",
         f"Reference: `{report['reference']}` · {report['duration_seconds']:.3f}s · `{report['language']}`",
         "",
+        "Primary metric: [SubER](https://aclanthology.org/2022.iwslt-1.1/) via [`subtitle-edit-rate==0.4.0`](https://pypi.org/project/subtitle-edit-rate/) (lower is better); AS-WER and AS-CER are automatic-segmentation lexical error rates following the [NIST SCTK/SCLITE](https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm) edit-rate convention. The reference and hypotheses must use the same audio timeline. The heuristic score and anchor timing diagnostics are project-specific and are not benchmark scores.",
+        "",
         "Timing is median absolute anchor error / p90 absolute anchor error. Drift is the timing slope in seconds per minute.",
         "",
-        "| variant | score | accuracy | WER | CER | timing p50 / p90 | drift | coverage | segments | gates |",
+        "| variant | SubER ↓ (%) | AS-WER ↓ (%) | AS-CER ↓ (%) | heuristic score ↑ | anchor p50 / p90 | drift | coverage | segments | gates |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for variant in report["variants"]:
+        authoritative = variant["authoritative"]
         timing = variant["timing"]
         intrinsic = variant["intrinsic"]
         coverage = intrinsic["coverage"]
         drift = timing["slope_seconds_per_minute"]
         gate_text = "; ".join(variant["gates"]) if variant["gates"] else "pass"
         lines.append(
-            "| {name} | {score:.1f} | {accuracy} | {wer} | {cer} | {p50} / {p90} | {drift:+.3f} s/min | {coverage} | {segments} | {gates} |".format(
+            "| {name} | {suber} | {as_wer} | {as_cer} | {score} | {p50} / {p90} | {drift:+.3f} s/min | {coverage} | {segments} | {gates} |".format(
                 name=variant["name"],
-                score=variant["score"],
-                accuracy=_percent(variant["accuracy"]),
-                wer=_percent(variant["wer"]["rate"]),
-                cer=_percent(variant["cer"]["rate"]),
+                suber=_score(authoritative["suber"], 3) + "%",
+                as_wer=_score(authoritative["as_wer"], 3) + "%",
+                as_cer=_score(authoritative["as_cer"], 3) + "%",
+                score=_score(variant["heuristic_score"]),
                 p50=_milliseconds(timing["median_abs"]),
                 p90=_milliseconds(timing["p90_abs"]),
                 drift=drift or 0.0,
@@ -102,11 +111,19 @@ def main() -> None:
         for raw_hypothesis in args.hypothesis:
             name, path = _hypothesis(raw_hypothesis)
             result = evaluate_transcription(reference, load_srt(path), duration, args.language)
-            variants.append({"name": name, "hypothesis": str(path), **result})
+            variants.append(
+                {
+                    "name": name,
+                    "hypothesis": str(path),
+                    "authoritative": authoritative_metrics(reference_path, path, args.language),
+                    **result,
+                }
+            )
         report = {
             "reference": str(reference_path),
             "duration_seconds": duration,
             "language": args.language,
+            "methodology": EVALUATION_METHODOLOGY,
             "variants": variants,
         }
     except (OSError, ValueError, RuntimeError) as error:

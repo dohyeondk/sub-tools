@@ -87,7 +87,9 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 **evaluation/transcription.py**: Reference-based scoring for generated SRT files
 - Keeps evaluation independent from model execution so variants share the same input
-- Reports WER/CER, timing, coverage, structure/readability metrics, and hard gates
+- Uses published SubER as the primary subtitle metric, plus SubER's AS-WER/AS-CER
+  lexical diagnostics; project-specific metrics remain explicitly labeled diagnostics
+- Reports timing, coverage, structure/readability metrics, and hard gates
 - Run through the `sub-tools-eval` script; it does not require an API key
 
 **config.py**: Central configuration dataclass

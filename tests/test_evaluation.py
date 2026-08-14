@@ -1,6 +1,7 @@
 from sub_tools.evaluation.transcription import (
     Segment,
     _primary_error_rate,
+    authoritative_metrics,
     evaluate_transcription,
     parse_srt,
 )
@@ -33,7 +34,7 @@ def test_perfect_track_scores_one_hundred_and_has_no_gates():
 
     result = evaluate_transcription(reference, reference, 4.0)
 
-    assert result["score"] == 100.0
+    assert result["heuristic_score"] == 100.0
     assert result["accuracy"] == 1.0
     assert result["wer"]["rate"] == 0.0
     assert result["timing"]["median_abs"] == 0.0
@@ -70,3 +71,25 @@ def test_overlaps_are_a_hard_gate():
 
     assert result["intrinsic"]["coverage"]["overlaps"] == 1
     assert result["gates"] == ["1 overlapping segments"]
+
+
+def test_authoritative_metrics_use_suber_for_nonparallel_srt(tmp_path):
+    reference_path = tmp_path / "reference.srt"
+    hypothesis_path = tmp_path / "hypothesis.srt"
+    reference_path.write_text(
+        "1\n00:00:00,000 --> 00:00:01,000\nOne two\n\n"
+        "2\n00:00:01,000 --> 00:00:02,000\nThree four\n",
+        encoding="utf-8",
+    )
+    hypothesis_path.write_text(
+        "1\n00:00:00,000 --> 00:00:02,000\nOne two three four\n",
+        encoding="utf-8",
+    )
+
+    result = authoritative_metrics(reference_path, hypothesis_path)
+
+    # SubER intentionally catches the segmentation mismatch even though the
+    # words are identical; AS-WER/AS-CER isolate the lexical result.
+    assert result["suber"] > 0.0
+    assert result["as_wer"] == 0.0
+    assert result["as_cer"] == 0.0
