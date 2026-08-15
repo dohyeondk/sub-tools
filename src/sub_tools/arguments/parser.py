@@ -108,7 +108,7 @@ def build_parser() -> ArgumentParser:
         "-m",
         dest="gemini_model",
         default=config.gemini_model,
-        help="Gemini model for proofreading and translation; transcription always uses WhisperX (default: %(default)s).",
+        help="Gemini model to use (default: %(default)s).",
     )
 
     parser.add_argument(
