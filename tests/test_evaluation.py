@@ -1,6 +1,5 @@
 from sub_tools.evaluation.transcription import (
     Segment,
-    _primary_error_rate,
     authoritative_metrics,
     evaluate_transcription,
     parse_srt,
@@ -19,14 +18,7 @@ def test_parse_srt_returns_seconds_and_text():
     ]
 
 
-def test_number_spelling_is_not_an_error():
-    result = _primary_error_rate("We saw 2 people", "We saw two people", "en")
-
-    assert result["wer"]["distance"] == 0
-    assert result["cer"]["distance"] == 0
-
-
-def test_perfect_track_scores_one_hundred_and_has_no_gates():
+def test_identical_track_has_clean_diagnostics():
     reference = [
         Segment(0, 0.0, 2.0, "One two three four five"),
         Segment(1, 2.0, 4.0, "Six seven eight nine ten"),
@@ -34,9 +26,6 @@ def test_perfect_track_scores_one_hundred_and_has_no_gates():
 
     result = evaluate_transcription(reference, reference, 4.0)
 
-    assert result["heuristic_score"] == 100.0
-    assert result["accuracy"] == 1.0
-    assert result["wer"]["rate"] == 0.0
     assert result["timing"]["median_abs"] == 0.0
     assert result["intrinsic"]["coverage"]["coverage_ratio"] == 1.0
     assert result["gates"] == []

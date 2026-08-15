@@ -80,11 +80,10 @@ The report also includes `AS-WER` and `AS-CER`, which are the package's
 automatic-segmentation lexical diagnostics for SRTs with different cue boundaries.
 They use the same substitution/insertion/deletion edit-rate convention documented in
 [NIST SCTK/SCLITE](https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm),
-but this command does not invoke SCTK itself. The old `accuracy`, `wer`, `cer`, and
-0–100 composite (`heuristic_score`) remain as project diagnostics; they are not
-standardized benchmark scores. Coverage, anchor
-timing, readability, repetition, and hard gates are engineering checks for this
-product and should be compared only across variants on the same fixture.
+but this command does not invoke SCTK itself. Coverage, gaps, anchor timing,
+readability, repetition, and hard gates are separate product diagnostics because
+SubER does not expose those release checks. They should be compared only across
+variants on the same fixture; the evaluator no longer invents a combined quality score.
 
 Give each hypothesis a stable name with `NAME=PATH`; repeat `--hypothesis` to compare
 models or pipeline stages:

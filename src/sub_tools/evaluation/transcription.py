@@ -15,7 +15,7 @@ from pathlib import Path
 import re
 import subprocess
 import unicodedata
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import pysrt
 from suber.file_readers import read_input_file
@@ -77,6 +77,7 @@ EVALUATION_METHODOLOGY = {
     "primary_metric": "SubER",
     "primary_direction": "lower_is_better",
     "lexical_metrics": ["AS-WER", "AS-CER"],
+    "diagnostics": ["coverage", "gaps", "anchor_timing", "readability", "repetition", "gates"],
     "implementation": "subtitle-edit-rate==0.4.0",
     "sources": {
         "suber_paper": "https://aclanthology.org/2022.iwslt-1.1/",
@@ -153,10 +154,6 @@ def tokens(text: str, language: str = "en") -> list[str]:
     return normalized.split(" ")
 
 
-def chars(text: str, language: str = "en") -> list[str]:
-    return list(normalize_text(text, language).replace(" ", ""))
-
-
 def parse_srt(content: str) -> list[Segment]:
     """Parse an SRT string with pysrt and return normalized timed cues."""
 
@@ -228,53 +225,6 @@ def authoritative_metrics(
 
 def full_text(segments: Sequence[Segment]) -> str:
     return " ".join(segment.text for segment in segments)
-
-
-def _edit_ops(reference: Sequence[str], hypothesis: Sequence[str]) -> dict[str, int | float]:
-    """Levenshtein distance with a deterministic substitution/insertion split."""
-
-    previous = [(j, 0, j, 0) for j in range(len(hypothesis) + 1)]
-    for ref_index, ref_token in enumerate(reference, start=1):
-        current: list[tuple[int, int, int, int]] = [(ref_index, 0, 0, ref_index)]
-        for hyp_index, hyp_token in enumerate(hypothesis, start=1):
-            if ref_token == hyp_token:
-                current.append(previous[hyp_index - 1])
-                continue
-            substitution = previous[hyp_index - 1]
-            insertion = current[hyp_index - 1]
-            deletion = previous[hyp_index]
-            if substitution[0] <= insertion[0] and substitution[0] <= deletion[0]:
-                current.append((substitution[0] + 1, substitution[1] + 1, substitution[2], substitution[3]))
-            elif insertion[0] <= deletion[0]:
-                current.append((insertion[0] + 1, insertion[1], insertion[2] + 1, insertion[3]))
-            else:
-                current.append((deletion[0] + 1, deletion[1], deletion[2], deletion[3] + 1))
-        previous = current
-
-    distance, substitutions, insertions, deletions = previous[-1]
-    reference_length = len(reference)
-    return {
-        "distance": distance,
-        "substitutions": substitutions,
-        "insertions": insertions,
-        "deletions": deletions,
-        "reference_length": reference_length,
-        "hypothesis_length": len(hypothesis),
-        "rate": distance / reference_length if reference_length else (1.0 if hypothesis else 0.0),
-    }
-
-
-def _primary_error_rate(reference: str, hypothesis: str, language: str) -> dict:
-    word_errors = _edit_ops(tokens(reference, language), tokens(hypothesis, language))
-    character_errors = _edit_ops(chars(reference, language), chars(hypothesis, language))
-    rate = character_errors["rate"] if is_non_spaced(language) else word_errors["rate"]
-    return {
-        "unit": "cer" if is_non_spaced(language) else "wer",
-        "rate": rate,
-        "accuracy": max(0.0, 1.0 - rate),
-        "wer": word_errors,
-        "cer": character_errors,
-    }
 
 
 def _percentile(values: Sequence[float], percentile: float) -> float | None:
@@ -453,48 +403,6 @@ def _timing_stats(anchor_list: Sequence[dict]) -> dict:
     }
 
 
-def _binned_f1(reference: Sequence[Segment], hypothesis: Sequence[Segment], language: str, bin_seconds: float = 1.0) -> float:
-    def bucket(segments: Sequence[Segment]) -> dict[int, Counter[str]]:
-        buckets: dict[int, Counter[str]] = {}
-        for token, timestamp in _token_timeline(segments, language):
-            buckets.setdefault(math.floor(timestamp / bin_seconds), Counter())[token] += 1
-        return buckets
-
-    reference_bins = bucket(reference)
-    hypothesis_bins = bucket(hypothesis)
-    shared = reference_total = hypothesis_total = 0
-    for key in set(reference_bins) | set(hypothesis_bins):
-        reference_counts = reference_bins.get(key, Counter())
-        hypothesis_counts = hypothesis_bins.get(key, Counter())
-        reference_total += sum(reference_counts.values())
-        hypothesis_total += sum(hypothesis_counts.values())
-        shared += sum(min(count, hypothesis_counts.get(token, 0)) for token, count in reference_counts.items())
-    precision = shared / hypothesis_total if hypothesis_total else 0.0
-    recall = shared / reference_total if reference_total else 0.0
-    return 2 * precision * recall / (precision + recall) if precision + recall else 0.0
-
-
-def _proper_nouns(text: str) -> set[str]:
-    lowercased = set()
-    for word in text.split():
-        clean = re.sub(r"^[^\w]+|[^\w]+$", "", word, flags=re.UNICODE)
-        if clean and clean == clean.casefold():
-            lowercased.add(clean.casefold())
-
-    found = set()
-    for sentence in re.split(r"(?<=[.!?])\s+|\n", text):
-        for index, word in enumerate(sentence.strip().split()):
-            clean = re.sub(r"^[^\w]+|[^\w]+$", "", word, flags=re.UNICODE)
-            if index == 0 or len(clean) < 3:
-                continue
-            if not (clean[0].isupper() and clean[1:].islower()):
-                continue
-            if clean.casefold() in lowercased:
-                continue
-            found.add(clean.casefold())
-    return found
-
-
 def _max_repetition_share(text: str, language: str, n: int = 5) -> float:
     units = tokens(text, language)
     if len(units) < n * 3:
@@ -552,74 +460,6 @@ def intrinsic_metrics(segments: Sequence[Segment], duration_seconds: float, lang
     }
 
 
-def reference_metrics(reference: Sequence[Segment], hypothesis: Sequence[Segment], language: str = "en") -> dict:
-    errors = _primary_error_rate(full_text(reference), full_text(hypothesis), language)
-    reference_nouns = _proper_nouns(full_text(reference))
-    hypothesis_nouns = _proper_nouns(full_text(hypothesis))
-    missed_nouns = sorted(reference_nouns - hypothesis_nouns)
-    return {
-        "unit": errors["unit"],
-        "error_rate": errors["rate"],
-        "accuracy": errors["accuracy"],
-        "wer": errors["wer"],
-        "cer": errors["cer"],
-        "timing": _timing_stats(_anchors(reference, hypothesis, language)),
-        "lexical_f1_per_second": _binned_f1(reference, hypothesis, language),
-        "proper_noun_recall": (
-            (len(reference_nouns) - len(missed_nouns)) / len(reference_nouns)
-            if reference_nouns
-            else None
-        ),
-        "missed_proper_nouns": missed_nouns[:25],
-    }
-
-
-def _clamp(value: float) -> float:
-    return min(1.0, max(0.0, value))
-
-
-def score_transcription(intrinsic: dict, reference: dict) -> dict:
-    parts = [
-        ("coverage", 15, _clamp(intrinsic["coverage"]["coverage_ratio"] / 0.9)),
-        (
-            "structure",
-            10,
-            _clamp(
-                1
-                - intrinsic["segment_seconds"]["share_over_hard_limit"] * 2
-                - (0.3 if intrinsic["coverage"]["overlaps"] else 0.0)
-                - (0.2 if intrinsic["beyond_duration"] else 0.0)
-                - _clamp(intrinsic["hallucination"]["max_repeated_phrase_share"] * 3)
-                - (0.25 if intrinsic["hallucination"]["boilerplate_hits"] else 0.0)
-            ),
-        ),
-        (
-            "readability",
-            10,
-            _clamp(
-                1
-                - intrinsic["readability"]["share_over_max_cps"]
-                - intrinsic["readability"]["share_over_max_chars"] * 0.5
-                - intrinsic["readability"]["share_over_max_lines"] * 0.5
-            ),
-        ),
-        ("accuracy", 40, _clamp(1 - reference["error_rate"] / 0.3)),
-        (
-            "timing",
-            25,
-            _clamp(1 - (reference["timing"]["median_abs"] or 0.0) / 1.5),
-        ),
-    ]
-    score = sum(weight * value for _, weight, value in parts) / sum(weight for _, weight, _ in parts)
-    return {
-        "score": round(score * 1000) / 10,
-        "parts": [
-            {"name": name, "weight": weight, "value": value, "points": round(weight * value * 10) / 10}
-            for name, weight, value in parts
-        ],
-    }
-
-
 def transcription_gates(intrinsic: dict) -> list[str]:
     coverage = intrinsic["coverage"]
     failures: list[str] = []
@@ -650,21 +490,16 @@ def evaluate_transcription(
     duration_seconds: float,
     language: str = "en",
 ) -> dict:
-    """Evaluate one generated SRT against a human reference transcript."""
+    """Calculate non-benchmark diagnostics for one generated subtitle track.
+
+    Canonical reference metrics are calculated by :func:`authoritative_metrics`,
+    which delegates to the pinned SubER implementation. This function only
+    reports diagnostics that the reference scorer does not provide directly.
+    """
 
     intrinsic = intrinsic_metrics(hypothesis, duration_seconds, language)
-    reference_result = reference_metrics(reference, hypothesis, language)
-    score = score_transcription(intrinsic, reference_result)
     return {
-        "heuristic_score": score["score"],
-        "heuristic_score_parts": score["parts"],
-        "accuracy": reference_result["accuracy"],
-        "wer": reference_result["wer"],
-        "cer": reference_result["cer"],
-        "timing": reference_result["timing"],
-        "lexical_f1_per_second": reference_result["lexical_f1_per_second"],
-        "proper_noun_recall": reference_result["proper_noun_recall"],
-        "missed_proper_nouns": reference_result["missed_proper_nouns"],
+        "timing": _timing_stats(_anchors(reference, hypothesis, language)),
         "intrinsic": intrinsic,
         "gates": transcription_gates(intrinsic),
     }
