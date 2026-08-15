@@ -22,10 +22,26 @@ def test_authoritative_metrics_delegate_to_subtitle_edit_rate_for_nonparallel_sr
 
     result = authoritative_metrics(reference_path, hypothesis_path)
 
-    assert set(result) == {"suber", "as_wer", "as_cer"}
+    assert set(result) == {
+        "suber",
+        "as_wer",
+        "as_cer",
+        "as_bleu",
+        "as_ter",
+        "as_chrf",
+        "t_wer",
+        "t_cer",
+        "t_bleu",
+        "t_ter",
+        "t_chrf",
+    }
     assert result["suber"] > 0.0  # segmentation differs, despite identical words
     assert result["as_wer"] == 0.0
     assert result["as_cer"] == 0.0
+    assert result["as_ter"] == 0.0
+    assert result["t_wer"] == 0.0
+    assert result["t_cer"] == 0.0
+    assert result["t_ter"] == 0.0
 
 
 def test_authoritative_metrics_reports_lexical_errors(tmp_path):
@@ -41,3 +57,9 @@ def test_authoritative_metrics_reports_lexical_errors(tmp_path):
     assert result["suber"] > 0.0
     assert result["as_wer"] > 0.0
     assert result["as_cer"] > 0.0
+    assert result["as_ter"] > 0.0
+    assert result["as_chrf"] < 100.0
+    assert result["t_wer"] > 0.0
+    assert result["t_cer"] > 0.0
+    assert result["t_ter"] > 0.0
+    assert result["t_chrf"] < 100.0

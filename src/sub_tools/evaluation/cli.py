@@ -44,19 +44,27 @@ def _markdown(report: dict) -> str:
         "",
         f"Reference: `{report['reference']}` · `{report['language']}`",
         "",
-        "All scores below are calculated by the pinned [`subtitle-edit-rate==0.4.0`](https://pypi.org/project/subtitle-edit-rate/) package. SubER is timing- and segmentation-aware; AS-WER and AS-CER use the package's automatic segmentation alignment. Lower is better for every metric.",
+        "All scores below are calculated by the pinned [`subtitle-edit-rate==0.4.0`](https://pypi.org/project/subtitle-edit-rate/) package. SubER is timing- and segmentation-aware; AS-* metrics use automatic Levenshtein segmentation alignment, and t-* metrics use package timing alignment. Lower is better for SubER, AS-WER, AS-CER, AS-TER, t-WER, t-CER, and t-TER; higher is better for AS-BLEU, AS-chrF, t-BLEU, and t-chrF.",
         "",
-        "| variant | SubER ↓ (%) | AS-WER ↓ (%) | AS-CER ↓ (%) |",
-        "|---|---:|---:|---:|",
+        "| variant | SubER ↓ (%) | AS-WER ↓ (%) | AS-CER ↓ (%) | AS-BLEU ↑ (0–100) | AS-TER ↓ (%) | AS-chrF ↑ (0–100) | t-WER ↓ (%) | t-CER ↓ (%) | t-BLEU ↑ (0–100) | t-TER ↓ (%) | t-chrF ↑ (0–100) |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for variant in report["variants"]:
         metrics = variant["metrics"]
         lines.append(
-            "| {name} | {suber:.3f}% | {as_wer:.3f}% | {as_cer:.3f}% |".format(
+            "| {name} | {suber:.3f}% | {as_wer:.3f}% | {as_cer:.3f}% | {as_bleu:.3f} | {as_ter:.3f}% | {as_chrf:.3f} | {t_wer:.3f}% | {t_cer:.3f}% | {t_bleu:.3f} | {t_ter:.3f}% | {t_chrf:.3f} |".format(
                 name=variant["name"],
                 suber=metrics["suber"],
                 as_wer=metrics["as_wer"],
                 as_cer=metrics["as_cer"],
+                as_bleu=metrics["as_bleu"],
+                as_ter=metrics["as_ter"],
+                as_chrf=metrics["as_chrf"],
+                t_wer=metrics["t_wer"],
+                t_cer=metrics["t_cer"],
+                t_bleu=metrics["t_bleu"],
+                t_ter=metrics["t_ter"],
+                t_chrf=metrics["t_chrf"],
             )
         )
     lines.append("")

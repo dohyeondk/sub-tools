@@ -87,7 +87,7 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 **evaluation/transcription.py**: Reference-based scoring for generated SRT files
 - Keeps evaluation independent from model execution so variants share the same input
-- Delegates SubER, AS-WER, and AS-CER to the pinned `subtitle-edit-rate` package
+- Delegates SubER, AS-WER, AS-CER, AS-BLEU, AS-TER, AS-chrF, t-WER, t-CER, t-BLEU, t-TER, and t-chrF to the pinned `subtitle-edit-rate` package
 - Does not implement a local quality score or duplicate the package's edit-distance code
 - Run through the `sub-tools-eval` script; it does not require an API key
 

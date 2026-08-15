@@ -76,13 +76,30 @@ package. SubER is reference-based and accounts for subtitle text, segmentation, 
 timing; lower is better. It is a published academic method and reference
 implementation, not an NIST certification.
 
-The report also includes `AS-WER` and `AS-CER`, which are the package's
-automatic-segmentation lexical diagnostics for SRTs with different cue boundaries.
-They use the same substitution/insertion/deletion edit-rate convention documented in
-[NIST SCTK/SCLITE](https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm),
-but this command does not invoke SCTK itself. The evaluator is intentionally
-package-only: it does not add a custom score, timing metric, coverage metric, or
-release gate.
+The report also includes the package's automatic-segmentation lexical metrics for
+SRTs with different cue boundaries: `AS-WER`, `AS-CER`, `AS-BLEU`, `AS-TER`, and
+`AS-chrF`. `AS-WER` and `AS-CER` use the same substitution/insertion/deletion
+edit-rate convention documented in [NIST SCTK/SCLITE](https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm);
+BLEU, TER, and chrF are provided by SacreBLEU through `subtitle-edit-rate`.
+The report also includes the package's timing-aligned `t-WER`, `t-CER`, `t-BLEU`,
+`t-TER`, and `t-chrF` diagnostics. This command does not invoke SCTK itself. The
+evaluator is intentionally package-only: it does not add a custom score, timing
+metric, coverage metric, or release gate.
+
+The package documents the AS alignment family as the established automatic
+segmentation approach (Matusov et al., [IWSLT 2005](https://aclanthology.org/2005.iwslt-1.19/))
+and the t-BLEU timing-alignment approach (Cherry et al.,
+[Interspeech 2021](https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf)).
+The implementation here calls the package APIs directly; it does not reimplement
+either alignment or any metric.
+
+SubER is the primary score because it is the package's timing- and
+segmentation-aware metric. AS-WER, AS-CER, and AS-TER are error rates (lower is
+better); AS-BLEU and AS-chrF are similarity scores (higher is better). BLEU can be
+low on very short samples because it requires n-gram matches, so it should be read
+alongside the other metrics rather than used alone. The `t-*` metrics re-segment
+the hypothesis using subtitle timings; they are supplemental diagnostics and do
+not replace SubER's joint timing/segmentation score.
 
 Give each hypothesis a stable name with `NAME=PATH`; repeat `--hypothesis` to compare
 models or pipeline stages:
