@@ -1,7 +1,7 @@
 """Thin adapter around the published ``subtitle-edit-rate`` package.
 
 This module intentionally contains no local transcription metric
-implementation. SubER and the AS-* metrics all come from the pinned package so
+implementation. SubER and the AS-*/t-* metrics all come from the pinned package so
 the command uses the same algorithms as the upstream reference implementation.
 """
 
@@ -108,7 +108,7 @@ def authoritative_metrics(
     hypothesis_path: str | Path,
     language: str = "en",
 ) -> dict[str, float]:
-    """Return package-provided SubER and automatically segmented metrics."""
+    """Return package-provided SubER and alignment-specific lexical metrics."""
 
     suber_language = _suber_language(language)
     reference = read_input_file(str(reference_path), "SRT")
