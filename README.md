@@ -66,6 +66,62 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
+## 📏 Transcription evaluation
+
+The evaluator is deliberately separate from model execution: it scores generated SRT
+files against a human reference so multiple runs can be compared on identical input.
+The primary score is the published [SubER method](https://aclanthology.org/2022.iwslt-1.1/),
+implemented by the pinned [`subtitle-edit-rate==0.4.0`](https://pypi.org/project/subtitle-edit-rate/)
+package. SubER is reference-based and accounts for subtitle text, segmentation, and
+timing; lower is better. It is a published academic method and reference
+implementation, not an NIST certification.
+
+The report also includes the package's automatic-segmentation lexical metrics for
+SRTs with different cue boundaries: `AS-WER`, `AS-CER`, `AS-BLEU`, `AS-TER`, and
+`AS-chrF`. `AS-WER` and `AS-CER` use the same substitution/insertion/deletion
+edit-rate convention documented in [NIST SCTK/SCLITE](https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm);
+BLEU, TER, and chrF are provided by SacreBLEU through `subtitle-edit-rate`.
+The report also includes the package's timing-aligned `t-WER`, `t-CER`, `t-BLEU`,
+`t-TER`, and `t-chrF` diagnostics. This command does not invoke SCTK itself. The
+evaluator is intentionally package-only: it does not add a custom score, timing
+metric, coverage metric, or release gate.
+
+The package documents the AS alignment family as the established automatic
+segmentation approach (Matusov et al., [IWSLT 2005](https://aclanthology.org/2005.iwslt-1.19/))
+and the t-BLEU timing-alignment approach (Cherry et al.,
+[Interspeech 2021](https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf)).
+The implementation here calls the package APIs directly; it does not reimplement
+either alignment or any metric.
+
+SubER is the primary score because it is the package's timing- and
+segmentation-aware metric. AS-WER, AS-CER, and AS-TER are error rates (lower is
+better); AS-BLEU and AS-chrF are similarity scores (higher is better). BLEU can be
+low on very short samples because it requires n-gram matches, so it should be read
+alongside the other metrics rather than used alone. The `t-*` metrics re-segment
+the hypothesis using subtitle timings; they are supplemental diagnostics and do
+not replace SubER's joint timing/segmentation score.
+
+Give each hypothesis a stable name with `NAME=PATH`; repeat `--hypothesis` to compare
+models or pipeline stages:
+
+```shell
+sub-tools-eval \
+  --reference reference/en.srt \
+  --hypothesis whisperx=output/transcript.srt \
+  --hypothesis gemini-3.7=output/gemini-3.7/en.srt \
+  --hypothesis gemini-3.6=output/gemini-3.6/en.srt \
+  --output evals/transcription.json \
+  --markdown evals/transcription.md
+```
+
+Only the reference and generated SRT files are inputs; no audio file or API key is
+required. Private or copyrighted recordings are intentionally not bundled in the
+package.
+
+`sub-tools-eval` measures the text, segmentation, and timing quality of the assembled
+SRT output, while `sub-tools` remains responsible for producing the SRT. In particular,
+Gemini proofreading is evaluated with the timestamps WhisperX produced.
+
 ### Build Docker
 
 ```shell
@@ -94,6 +150,9 @@ uv sync
 ```shell
 uv run pytest -m "not slow"
 ```
+
+The evaluation metrics have unit tests in `tests/test_evaluation.py` and do not require
+an API key or an audio file.
 
 ## 📝 License
 

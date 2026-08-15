@@ -85,6 +85,12 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 - Translate function: Translates to multiple target languages
 - Uses config for all parameters (audio_file, languages, API key)
 
+**evaluation/transcription.py**: Reference-based scoring for generated SRT files
+- Keeps evaluation independent from model execution so variants share the same input
+- Delegates SubER, AS-WER, AS-CER, AS-BLEU, AS-TER, AS-chrF, t-WER, t-CER, t-BLEU, t-TER, and t-chrF to the pinned `subtitle-edit-rate` package
+- Does not implement a local quality score or duplicate the package's edit-distance code
+- Run through the `sub-tools-eval` script; it does not require an API key
+
 **config.py**: Central configuration dataclass
 - Validation thresholds (max subtitle duration, gap thresholds)
 - Shared across all modules
