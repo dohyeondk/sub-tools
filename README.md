@@ -80,17 +80,15 @@ The report also includes `AS-WER` and `AS-CER`, which are the package's
 automatic-segmentation lexical diagnostics for SRTs with different cue boundaries.
 They use the same substitution/insertion/deletion edit-rate convention documented in
 [NIST SCTK/SCLITE](https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm),
-but this command does not invoke SCTK itself. Coverage, gaps, anchor timing,
-readability, repetition, and hard gates are separate product diagnostics because
-SubER does not expose those release checks. They should be compared only across
-variants on the same fixture; the evaluator no longer invents a combined quality score.
+but this command does not invoke SCTK itself. The evaluator is intentionally
+package-only: it does not add a custom score, timing metric, coverage metric, or
+release gate.
 
 Give each hypothesis a stable name with `NAME=PATH`; repeat `--hypothesis` to compare
 models or pipeline stages:
 
 ```shell
 sub-tools-eval \
-  --duration 356.133 \
   --reference reference/en.srt \
   --hypothesis whisperx=output/transcript.srt \
   --hypothesis gemini-3.7=output/gemini-3.7/en.srt \
@@ -99,14 +97,13 @@ sub-tools-eval \
   --markdown evals/transcription.md
 ```
 
-Use `--audio-file clip.mp3` instead of `--duration` when `ffprobe` is available. The
-reference and audio are inputs to the evaluation and are intentionally not bundled in
-the package; this keeps private or copyrighted recordings out of the repository.
+Only the reference and generated SRT files are inputs; no audio file or API key is
+required. Private or copyrighted recordings are intentionally not bundled in the
+package.
 
-`sub-tools-eval` measures the output of the full pipeline, while `sub-tools` remains
-responsible for producing the SRT. In particular, Gemini proofreading is evaluated with
-the timestamps WhisperX produced, so timing results belong to the assembled pipeline,
-not to Gemini alone.
+`sub-tools-eval` measures the text, segmentation, and timing quality of the assembled
+SRT output, while `sub-tools` remains responsible for producing the SRT. In particular,
+Gemini proofreading is evaluated with the timestamps WhisperX produced.
 
 ### Build Docker
 
