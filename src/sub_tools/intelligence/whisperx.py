@@ -17,7 +17,7 @@ def transcribe() -> None:
     if should_skip(config.srt_file):
         return
 
-    info("Transcribing audio using WhisperX...")
+    info("Transcribing...")
 
     try:
         with _suppress_whisperx_output():
@@ -50,7 +50,7 @@ def transcribe() -> None:
             serialize_subtitles(result["segments"], config.srt_file)
 
     except Exception as e:
-        print(f"WhisperX transcription failed: {str(e)}")
+        print(f"Transcription failed: {str(e)}")
         raise
 
 

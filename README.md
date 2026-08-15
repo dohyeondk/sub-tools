@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A robust Python toolkit for converting video/audio content into accurate, multilingual subtitles using WhisperX for transcription and Google's Gemini API for proofreading and translation.
+A toolkit for multilingual subtitles: WhisperX transcribes, and Gemini proofreads and translates. Gemini 3.7 Flash is the primary model.
 
 ## ✨ Features
 
@@ -27,6 +27,14 @@ A robust Python toolkit for converting video/audio content into accurate, multil
 pip install sub-tools
 ```
 
+For a source checkout, run the setup script from a shell. It installs `uv` when it is
+missing, provisions a supported Python interpreter if needed, and syncs the project
+environment:
+
+```shell
+./setup.sh
+```
+
 ### Usage
 
 ```shell
@@ -47,8 +55,8 @@ sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 # Specify custom tasks (available: video, audio, signature, transcribe, translate)
 sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
-# Specify a custom Gemini model (default: gemini-3-pro-preview)
-sub-tools -i https://example.com/video.mp4 --languages en --model gemini-2.5-pro
+# Specify a custom Gemini model for proofreading/translation
+sub-tools -i https://example.com/video.mp4 --languages en --model gemini-3.6-flash
 
 # Specify output directory (default: output)
 sub-tools -i https://example.com/video.mp4 --languages en --output my-subtitles
@@ -61,8 +69,8 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 1. **video**: Downloads media from URL (HLS or direct) → `video.mp4`
 2. **audio**: Extracts audio track → `audio.mp3`
 3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
-4. **transcribe**: Transcription using WhisperX → `transcript.srt`
-5. **translate**: Proofreads and translates to target languages using Gemini → `{language}.srt`
+4. **transcribe**: Transcription using WhisperX only → `transcript.srt`
+5. **translate**: Proofreads and translates the WhisperX transcript using Gemini → `{language}.srt`
 
 By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
@@ -70,6 +78,10 @@ By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
 The evaluator is deliberately separate from model execution: it scores generated SRT
 files against a human reference so multiple runs can be compared on identical input.
+WhisperX is the only transcription engine in this project. Gemini models are evaluated
+as a post-processing step over the same WhisperX transcript, with timestamps preserved;
+the comparison therefore measures proofreading differences between Gemini models rather
+than comparing different transcription engines.
 The primary score is the published [SubER method](https://aclanthology.org/2022.iwslt-1.1/),
 implemented by the pinned [`subtitle-edit-rate==0.4.0`](https://pypi.org/project/subtitle-edit-rate/)
 package. SubER is reference-based and accounts for subtitle text, segmentation, and
@@ -108,8 +120,8 @@ models or pipeline stages:
 sub-tools-eval \
   --reference reference/en.srt \
   --hypothesis whisperx=output/transcript.srt \
-  --hypothesis gemini-3.7=output/gemini-3.7/en.srt \
-  --hypothesis gemini-3.6=output/gemini-3.6/en.srt \
+  --hypothesis gemini-3.7-flash=output/gemini-3.7-flash/en.srt \
+  --hypothesis gemini-3.6-flash=output/gemini-3.6-flash/en.srt \
   --output evals/transcription.json \
   --markdown evals/transcription.md
 ```
@@ -121,6 +133,10 @@ package.
 `sub-tools-eval` measures the text, segmentation, and timing quality of the assembled
 SRT output, while `sub-tools` remains responsible for producing the SRT. In particular,
 Gemini proofreading is evaluated with the timestamps WhisperX produced.
+
+To compare models, generate one WhisperX transcript and pass each Gemini output as a
+`--hypothesis`. The Markdown report shows one row per variant; lower error rates and
+higher BLEU/chrF indicate a closer match to the reference.
 
 ### Build Docker
 
@@ -136,13 +152,10 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for det
 ### Quick Development Setup
 
 ```shell
-# Install uv package manager
-# https://github.com/astral-sh/uv
-
 # Clone and setup
 git clone https://github.com/dohyeondk/sub-tools.git
 cd sub-tools
-uv sync
+./setup.sh  # installs uv and runs uv sync
 ```
 
 ## 🧪 Testing

@@ -6,6 +6,9 @@ from dataclasses import dataclass, field, fields
 from typing import Any
 
 
+DEFAULT_GEMINI_MODEL = "gemini-3.7-flash"
+
+
 @dataclass
 class Config:
     """
@@ -36,7 +39,7 @@ class Config:
 
     # Gemini
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-3-pro-preview"
+    gemini_model: str = DEFAULT_GEMINI_MODEL
 
     # WhisperX
     whisperx_model: str = "large-v2"  # WhisperX model to use

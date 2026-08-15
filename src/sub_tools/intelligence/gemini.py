@@ -23,7 +23,7 @@ def proofread() -> None:
 
 
 async def _proofread() -> None:
-    info("Proofreading using Gemini...")
+    info("Proofreading...")
 
     language_code = config.source_language
     language = get_language_name(language_code)
@@ -87,7 +87,7 @@ async def _translate() -> None:
     if not target_language_codes:
         return
 
-    info("Translating using Gemini...")
+    info("Translating...")
 
     tasks = []
 

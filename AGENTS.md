@@ -9,13 +9,10 @@ sub-tools is a Python toolkit for converting video/audio content into accurate, 
 ## Development Setup
 
 ```bash
-# Install uv package manager if not already installed
-# https://github.com/astral-sh/uv
-
 # Clone and setup
 git clone https://github.com/dohyeondk/sub-tools.git
 cd sub-tools
-uv sync
+./setup.sh  # installs uv and runs uv sync
 ```
 
 ## Common Commands
@@ -31,8 +28,8 @@ uv run sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages
 # Only transcribe without translation
 uv run sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
-# Specify custom model
-uv run sub-tools -i <url> --languages en --model gemini-3-pro-preview
+# Specify a custom Gemini model for proofreading/translation (default: gemini-3.7-flash)
+uv run sub-tools -i <url> --languages en --model gemini-3.6-flash
 ```
 
 ### Testing
@@ -69,18 +66,20 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 1. **video**: Downloads media from URL (HLS or direct) → `output/video.mp4`
 2. **audio**: Extracts audio track → `output/audio.mp3`
 3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
-4. **transcribe**: Transcription using WhisperX (handles its own segmentation internally)
-5. **translate**: Proofreads and translates transcription using Gemini
+4. **transcribe**: Transcription using WhisperX only (handles its own segmentation internally)
+5. **translate**: Proofreads and translates the WhisperX transcript using the configured Gemini model
 
 ### Key Components
 
 **main.py**: Entry point that orchestrates the pipeline stages sequentially.
 
 **intelligence/whisperx.py**: Transcription using WhisperX
+- The only transcription backend in the pipeline; Gemini is never used to generate the initial transcript
 - High-quality speech recognition with word-level alignment
 - Uses config for all parameters (audio_file, source_language, model settings)
 
 **intelligence/gemini.py**: Proofreading and translation using Gemini
+- Uses the configured Gemini model; `--model` overrides it for proofreading/translation only
 - Proofread function: Fixes transcription errors using audio as reference
 - Translate function: Translates to multiple target languages
 - Uses config for all parameters (audio_file, languages, API key)
@@ -115,9 +114,9 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 **Config-Based Architecture**: All functions use the global config object instead of parameters. Functions like `download_from_url()`, `video_to_audio()`, `transcribe()`, `proofread()`, and `translate()` take no parameters and get values from `config`.
 
-**WhisperX Integration**: Uses WhisperX for state-of-the-art speech recognition with word-level timestamps. WhisperX handles audio segmentation internally using voice activity detection.
+**WhisperX Integration**: Uses WhisperX as the only transcription backend for state-of-the-art speech recognition with word-level timestamps. WhisperX handles audio segmentation internally using voice activity detection.
 
-**Gemini Integration**: Uses Gemini API with audio files as reference for both proofreading transcriptions and translating to target languages.
+**Gemini Integration**: Uses the configured Gemini model with audio files as reference for proofreading the WhisperX transcript and translating to target languages. Gemini does not replace WhisperX transcription.
 
 ## Project Structure
 
