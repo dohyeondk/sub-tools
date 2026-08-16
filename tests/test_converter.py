@@ -11,6 +11,29 @@ TEST_M3U8_URL = (
     "http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"
 )
 
+# Failures that say the sample host is having a bad day, not that the code is
+# wrong. A CI run must not go red because a third-party file server did.
+TRANSIENT_NETWORK_ERRORS = (
+    "5XX",
+    "Connection timed out",
+    "Connection refused",
+    "Connection reset",
+    "Temporary failure in name resolution",
+    "Failed to resolve hostname",
+)
+
+
+def download_or_skip():
+    """
+    Download the sample video, skipping the test when the host is unavailable.
+    """
+    try:
+        download_from_url()
+    except RuntimeError as e:
+        if any(marker in str(e) for marker in TRANSIENT_NETWORK_ERRORS):
+            pytest.skip(f"sample video host unavailable: {e}")
+        raise
+
 
 class TestDownloadFromUrl:
     """Integration tests for download_from_url function using real video."""
@@ -23,7 +46,7 @@ class TestDownloadFromUrl:
         config.video_file = str(video_file)
         config.overwrite = True
 
-        download_from_url()
+        download_or_skip()
 
         assert video_file.exists()
         assert video_file.stat().st_size > 0
@@ -52,7 +75,7 @@ class TestDownloadFromUrl:
         config.video_file = str(video_file)
         config.overwrite = True
 
-        download_from_url()
+        download_or_skip()
 
         assert video_file.exists()
         assert video_file.stat().st_size > 100  # Much larger than "existing content"
@@ -78,7 +101,7 @@ class TestDownloadFromUrl:
         config.video_file = str(video_file)
         config.overwrite = True
 
-        download_from_url()
+        download_or_skip()
 
         assert video_file.exists()
         assert video_file.stat().st_size > 0
@@ -96,7 +119,7 @@ class TestVideoToAudio:
         config.video_file = str(video_file)
         config.overwrite = True
 
-        download_from_url()
+        download_or_skip()
 
         audio_file.write_text("existing audio content")
         original_mtime = audio_file.stat().st_mtime
