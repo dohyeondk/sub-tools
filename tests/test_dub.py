@@ -224,4 +224,7 @@ def test_main_wires_dub_task(monkeypatch, tmp_path):
 
 
 def test_dub_remains_opt_in():
-    assert "dub" not in Config().tasks
+    defaults = Config()
+
+    assert "dub" not in defaults.tasks
+    assert defaults.gemini_tts_model == "gemini-2.5-flash-preview-tts"

@@ -79,7 +79,7 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 6. **dub**: Gemini TTS reads each translated subtitle file → `{language}.wav`
 
 The `dub` task is opt-in; the existing five tasks continue to run by
-default. It uses `gemini-3.1-flash-tts-preview` and the `Sadaltager` voice unless you pass
+default. It uses `gemini-2.5-flash-preview-tts` and the `Sadaltager` voice unless you pass
 `--tts-model` or `--tts-voice`.
 
 Gemini 3.7 Flash supports audio input but not audio output, so `dub` sends the

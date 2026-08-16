@@ -7,7 +7,7 @@ from typing import Any
 
 
 DEFAULT_GEMINI_MODEL = "gemini-3.7-flash"
-DEFAULT_GEMINI_TTS_MODEL = "gemini-3.1-flash-tts-preview"
+DEFAULT_GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts"
 
 
 @dataclass
