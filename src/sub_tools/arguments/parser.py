@@ -106,6 +106,34 @@ def build_parser() -> ArgumentParser:
     )
 
     parser.add_argument(
+        "--tts-model",
+        dest="gemini_tts_model",
+        default=config.gemini_tts_model,
+        help="Gemini TTS model for the dub task (default: %(default)s).",
+    )
+
+    parser.add_argument(
+        "--tts-voice",
+        dest="gemini_tts_voice",
+        default=config.gemini_tts_voice,
+        help="Gemini prebuilt voice for the dub task (default: %(default)s).",
+    )
+
+    parser.add_argument(
+        "--dub-chunk-duration",
+        type=float,
+        default=config.dub_chunk_duration,
+        help="Maximum seconds per synchronized dub request (default: %(default)s).",
+    )
+
+    parser.add_argument(
+        "--dub-gap-threshold",
+        type=float,
+        default=config.dub_gap_threshold,
+        help="Seconds of subtitle silence preserved between dub chunks (default: %(default)s).",
+    )
+
+    parser.add_argument(
         "--debug",
         action="store_true",
         default=config.debug,

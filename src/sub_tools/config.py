@@ -7,6 +7,7 @@ from typing import Any
 
 
 DEFAULT_GEMINI_MODEL = "gemini-3.7-flash"
+DEFAULT_GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts"
 
 
 @dataclass
@@ -39,6 +40,12 @@ class Config:
     # Gemini
     gemini_api_key: str | None = None
     gemini_model: str = DEFAULT_GEMINI_MODEL
+    gemini_tts_model: str = DEFAULT_GEMINI_TTS_MODEL
+    gemini_tts_voice: str = "Sadaltager"
+
+    # Dub synchronization
+    dub_chunk_duration: float = 60.0
+    dub_gap_threshold: float = 2.0
 
     # Validation
     max_valid_duration: int = (

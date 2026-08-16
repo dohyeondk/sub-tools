@@ -1,4 +1,4 @@
-from sub_tools.intelligence.gemini import transcribe, translate
+from sub_tools.intelligence.gemini import dub, transcribe, translate
 
 from .arguments.parser import build_parser, parse_args
 from .config import config
@@ -50,6 +50,15 @@ def main():
 
             header(f"{step}. Translate")
             translate()
+            step += 1
+
+        if "dub" in config.tasks:
+            if not (config.gemini_api_key and config.gemini_api_key.strip()):
+                parsed.func()
+                raise Exception("No Gemini API Key provided")
+
+            header(f"{step}. Dub")
+            dub()
             step += 1
 
     except Exception as e:
