@@ -14,7 +14,7 @@ dependencies = [
     "pytest-asyncio>=0.23.5",
     "rich>=13.9.4",
     "subtitle-edit-rate==0.4.0",
-    "whisperx>=3.1.1",
+    "whisperx>=3.8.6",
 ]
 
 [project.scripts]
