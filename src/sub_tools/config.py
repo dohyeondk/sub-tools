@@ -30,7 +30,6 @@ class Config:
     video_file: str = "video.mp4"
     audio_file: str = "audio.mp3"
     signature_file: str = "message.shazamsignature"
-    srt_file: str = "transcript.srt"
     source_language: str = "en"
     languages: list[str] = field(default_factory=lambda: ["en"])
     overwrite: bool = False
@@ -40,12 +39,6 @@ class Config:
     # Gemini
     gemini_api_key: str | None = None
     gemini_model: str = DEFAULT_GEMINI_MODEL
-
-    # WhisperX
-    whisperx_model: str = "large-v2"  # WhisperX model to use
-    whisperx_device: str = "cpu"  # Device for WhisperX inference (cpu, cuda)
-    whisperx_compute_type: str = "int8"  # Compute type (int8, float16, float32)
-    whisperx_batch_size: int = 16  # Batch size for WhisperX inference
 
     # Validation
     max_valid_duration: int = (
@@ -57,6 +50,9 @@ class Config:
         6_000  # Maximum allowed gap between consecutive subtitles (ms)
     )
     min_subtitles: int = 1  # Minimum number of subtitles
+    max_missing_ratio: float = (
+        0.02  # Share of source subtitles a translation may drop before it is rejected
+    )
 
 
 # Global config instance

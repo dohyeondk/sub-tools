@@ -6,82 +6,81 @@ from google.api_core import exceptions as google_exceptions
 from google.genai import types
 from rich.progress import Progress
 
-from sub_tools.system.console import info
+from sub_tools.system.console import info, warning
 from sub_tools.system.file import should_skip
 from sub_tools.system.language import get_language_name
 
 from ..config import config
+from ..media.converter import audio_duration
+from ..subtitles.repair import repair_subtitles
+from ..subtitles.validator import SubtitleValidationError, find_problems
 
 
-def proofread() -> None:
-    """Proofread the source SRT file using Gemini."""
-
+def transcribe() -> None:
+    """
+    Transcribe the audio into subtitles using Gemini.
+    """
     if should_skip(f"{config.source_language}.srt"):
         return
 
-    asyncio.run(_proofread())
+    asyncio.run(_transcribe())
 
 
-async def _proofread() -> None:
-    info("Proofreading...")
+async def _transcribe() -> None:
+    info("Transcribing...")
 
     language_code = config.source_language
     language = get_language_name(language_code)
 
-    srt_file = config.srt_file
-    with open(srt_file, "r", encoding="utf-8") as f:
-        srt_content = f.read()
-
     system_instruction = f"""
-    You are a professional transcription proofreader.
-    You will receive an {language} SRT subtitle file and the corresponding audio file.
+    You are a professional transcriptionist.
+    You will receive an audio file in {language}.
 
     Your task is to:
     1. Listen to the audio carefully
-    2. Compare it with the provided SRT transcription
-    3. Fix any transcription errors, mistakes, or inaccuracies
-    4. Maintain the exact same timing (timestamps) as the input SRT
-    5. Improve punctuation and capitalization if needed
-    6. Clean up filler words ("um", "uh", "like", "you know") if they appear incorrectly
-    7. Fix any misheard words or phrases
+    2. Transcribe every spoken word accurately
+    3. Split the transcript into subtitle cues that follow the speech
+    4. Give every cue start and end timestamps that match when the words are spoken
 
     CRITICAL REQUIREMENTS:
-    1. Output ONLY the corrected SRT file. No code blocks, no explanations.
-    2. Keep ALL timestamps exactly as they are in the input SRT
-    3. Preserve the SRT format perfectly (number, timestamp, text, blank line)
-    4. Only modify the text content, not the structure or timing
-    5. The output must be valid SRT format
+    1. Output ONLY the SRT file. No code blocks, no explanations.
+    2. Preserve the SRT format perfectly (number, timestamp, text, blank line)
+    3. Every timestamp must be HH:MM:SS,mmm --> HH:MM:SS,mmm, always including the
+       hours field, even after the first hour of audio
+    4. Cover the entire recording from beginning to end, including the final minutes
+    5. Use correct punctuation and capitalization
+    6. The output must be valid SRT format
 
-    Return the proofread SRT file.
+    Return the SRT file.
     """
 
     file = _upload_file(config.audio_file)
-    await _call_gemini_api(
+    await _generate_subtitles(
         output_file=f"{language_code}.srt",
         system_instruction=system_instruction,
         file=file,
-        text=f"SRT to proofread:\n\n{srt_content}",
+        text=f"Transcribe this {language} audio into an SRT subtitle file.",
     )
 
 
 def translate() -> None:
-    """Translate the source SRT file using Gemini."""
-
+    """
+    Translate the source subtitles into each target language using Gemini.
+    """
     asyncio.run(_translate())
 
 
 async def _translate() -> None:
-    language_code = config.source_language
+    source_language_code = config.source_language
+    source_file = f"{source_language_code}.srt"
 
-    srt_file = f"{language_code}.srt"
-    with open(srt_file, "r", encoding="utf-8") as f:
+    with open(source_file, "r", encoding="utf-8") as f:
         srt_content = f.read()
 
-    # Filter out source language from target languages
     target_language_codes = [
-        lang
-        for lang in config.languages
-        if lang != language_code and not should_skip(f"{lang}.srt")
+        language
+        for language in config.languages
+        if language != source_language_code and not should_skip(f"{language}.srt")
     ]
 
     if not target_language_codes:
@@ -92,21 +91,16 @@ async def _translate() -> None:
     tasks = []
 
     with Progress() as progress:
-        progress_task = progress.add_task(
-            "Translation", total=len(target_language_codes)
-        )
+        progress_task = progress.add_task("Translation", total=len(target_language_codes))
 
         file = _upload_file(config.audio_file)
 
         for language_code in target_language_codes:
-            if should_skip(f"{language_code}.srt"):
-                continue
-
             task = asyncio.create_task(
                 _translate_language(
                     file=file,
                     srt_content=srt_content,
-                    source_language_code=config.source_language,
+                    source_language_code=source_language_code,
                     target_language_code=language_code,
                     completion=lambda: progress.update(progress_task, advance=1),
                 )
@@ -133,16 +127,15 @@ async def _translate_language(
     Your task is to:
     1. Translate the {source_language} subtitles to {target_language}
     2. Listen to the audio to understand context and tone
-    3. Maintain the exact same timing (timestamps) as the input SRT
+    3. Keep the exact same timing (timestamps) as the input SRT
     4. Ensure translations are natural and culturally appropriate for {target_language}
-    5. Keep the translation synchronized with the speech timing
 
     CRITICAL REQUIREMENTS:
     1. Output ONLY the translated SRT file in {target_language}. No code blocks, no explanations.
     2. Keep ALL timestamps exactly as they are in the input SRT
-    3. Preserve the SRT format perfectly (number, timestamp, text, blank line)
-    4. Only translate the text content, not the structure or timing
-    5. The output must be valid SRT format
+    3. Return exactly the same number of cues as the input, in the same order
+    4. Preserve the SRT format perfectly (number, timestamp, text, blank line)
+    5. Only translate the text content, not the structure or timing
     6. All subtitle text must be in {target_language}
 
     Translation Guidelines:
@@ -155,27 +148,90 @@ async def _translate_language(
     Return the translated SRT file in {target_language}.
     """
 
-    await _call_gemini_api(
+    await _generate_subtitles(
         output_file=f"{target_language_code}.srt",
         system_instruction=system_instruction,
         file=file,
         text=f"{source_language} SRT to translate:\n\n{srt_content}",
+        reference=srt_content,
     )
     completion()
 
 
-async def _call_gemini_api(
+async def _generate_subtitles(
     output_file: str,
     system_instruction: str,
     file: Optional[types.File] = None,
     text: Optional[str] = None,
+    reference: Optional[str] = None,
 ) -> None:
     """
-    Helper method to call Gemini API with retries for rate limits.
+    Ask Gemini for subtitles, repairing and checking the answer before accepting it.
+
+    Models get the words right far more reliably than the container, so a reply
+    that fails to parse is repaired first and only re-requested if the repair
+    cannot save it.
+    """
+    duration = audio_duration(config.audio_file)
+    attempts = max(1, config.retry)
+    last_errors: list[str] = []
+
+    for attempt in range(attempts):
+        content = await _call_gemini_api(
+            system_instruction=system_instruction,
+            file=file,
+            text=text,
+        )
+
+        if not content or "-->" not in content:
+            last_errors = ["response contained no subtitles"]
+            _report_attempt(output_file, attempt, attempts, last_errors)
+            continue
+
+        repaired, notes = repair_subtitles(content, duration=duration, reference=reference)
+        errors, warnings = find_problems(repaired, duration=duration, reference=reference)
+
+        if errors:
+            last_errors = errors
+            _report_attempt(output_file, attempt, attempts, errors)
+            continue
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(repaired)
+
+        for note in notes:
+            info(f"{output_file}: repaired — {note}")
+        for message in warnings:
+            warning(f"{output_file}: {message}")
+        return
+
+    raise SubtitleValidationError(
+        f"Could not produce valid subtitles for {output_file} "
+        f"after {attempts} attempt(s): {'; '.join(last_errors)}"
+    )
+
+
+def _report_attempt(output_file: str, attempt: int, attempts: int, errors: list[str]) -> None:
+    """
+    Explain why an answer was rejected before asking again.
+    """
+    reason = "; ".join(errors)
+    if attempt + 1 < attempts:
+        warning(f"{output_file}: attempt {attempt + 1}/{attempts} rejected ({reason}); retrying")
+    else:
+        warning(f"{output_file}: attempt {attempt + 1}/{attempts} rejected ({reason})")
+
+
+async def _call_gemini_api(
+    system_instruction: str,
+    file: Optional[types.File] = None,
+    text: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Call the Gemini API once, retrying only transient server-side failures.
     """
     client = genai.Client(api_key=config.gemini_api_key)
 
-    # Build parts for the content
     parts = []
     if file:
         parts.append(file)
@@ -200,21 +256,32 @@ async def _call_gemini_api(
                     tools=tools,
                 ),
             )
-            text = response.text
-            if text:
-                with open(output_file, "w", encoding="utf-8") as f:
-                    f.write(text)
-                return
+            return response.text
 
-        except google_exceptions.ResourceExhausted as e:
+        except (google_exceptions.ResourceExhausted, google_exceptions.ServiceUnavailable) as e:
             if attempt < config.retry - 1:
-                wait_time = 2**attempt  # Exponential backoff: 1, 2, 4 seconds
-                await asyncio.sleep(wait_time)
+                await asyncio.sleep(_backoff(attempt))
                 continue
-            else:
-                raise e
-        except Exception as e:
             raise e
+        except Exception as e:
+            message = str(e)
+            # The SDK surfaces 429/503 as generic errors depending on transport.
+            if ("429" in message or "503" in message) and attempt < config.retry - 1:
+                await asyncio.sleep(_backoff(attempt))
+                continue
+            raise e
+
+    return None
+
+
+def _backoff(attempt: int) -> int:
+    """
+    Wait long enough for a capacity problem to clear.
+
+    "High demand" responses persist for far longer than the one to four seconds
+    an unscaled backoff would wait.
+    """
+    return min(60, 5 * 2**attempt)
 
 
 def _upload_file(file_path: str) -> types.File:

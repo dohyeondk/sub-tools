@@ -1,8 +1,7 @@
-from sub_tools.intelligence.gemini import proofread, translate
+from sub_tools.intelligence.gemini import transcribe, translate
 
 from .arguments.parser import build_parser, parse_args
 from .config import config
-from .intelligence.whisperx import transcribe
 from .media.converter import download_from_url, media_to_signature, video_to_audio
 from .system.console import error, header
 from .system.file import ensure_output_directory
@@ -36,6 +35,10 @@ def main():
             step += 1
 
         if "transcribe" in config.tasks:
+            if not (config.gemini_api_key and config.gemini_api_key.strip()):
+                parsed.func()
+                raise Exception("No Gemini API Key provided")
+
             header(f"{step}. Transcribe")
             transcribe()
             step += 1
@@ -45,8 +48,7 @@ def main():
                 parsed.func()
                 raise Exception("No Gemini API Key provided")
 
-            header(f"{step}. Proofread & Translate")
-            proofread()
+            header(f"{step}. Translate")
             translate()
             step += 1
 

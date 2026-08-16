@@ -53,12 +53,6 @@ def build_parser() -> ArgumentParser:
     )
 
     parser.add_argument(
-        "--srt-file",
-        default=config.srt_file,
-        help="Filename for the generated subtitle file inside the output directory (default: %(default)s).",
-    )
-
-    parser.add_argument(
         "--source-language",
         default=config.source_language,
         help="Source language code. (default: %(default)s).",
