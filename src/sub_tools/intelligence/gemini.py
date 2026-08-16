@@ -252,7 +252,8 @@ async def _generate_dub_language(
         info(f"{language_code}.wav: generating chunk {index}/{len(groups)}")
         audio, mime_type = await _call_tts_api(prompt)
         pcm, sample_rate = _pcm_audio(audio, mime_type)
-        start, end = group[0].start, min(group[-1].end, duration)
+        start = group[0].start
+        end = min(max(cue.end for cue in group), duration)
         if start >= end:
             continue
         segments.append((start, end, _fit_pcm_duration(pcm, sample_rate, end - start)))
@@ -268,20 +269,32 @@ def _dub_groups(cues: list[Cue]) -> list[list[Cue]]:
     if config.dub_gap_threshold < 0:
         raise ValueError("Dub gap threshold cannot be negative")
 
-    groups = []
-    current = []
+    groups: list[list[Cue]] = []
+    current: list[Cue] = []
     for cue in cues:
-        starts_after_gap = (
-            current and cue.start - current[-1].end >= config.dub_gap_threshold
-        )
-        exceeds_window = (
-            current
-            and cue.end - current[0].start > config.dub_chunk_duration
-            and cue.start >= current[-1].end
-        )
-        if starts_after_gap or exceeds_window:
-            groups.append(current)
-            current = []
+        if cue.end - cue.start > config.dub_chunk_duration:
+            raise ValueError(
+                f"Subtitle #{cue.index} spans {cue.end - cue.start:.1f}s, exceeding the "
+                f"{config.dub_chunk_duration:.1f}s dub chunk duration"
+            )
+
+        if current:
+            current_end = max(item.end for item in current)
+            starts_after_gap = (
+                cue.start - current_end >= config.dub_gap_threshold
+            )
+            exceeds_window = (
+                max(current_end, cue.end) - current[0].start
+                > config.dub_chunk_duration
+            )
+            if exceeds_window and cue.start < current_end:
+                raise ValueError(
+                    "Overlapping subtitle cues exceed the configured dub chunk "
+                    "duration; increase --dub-chunk-duration or fix the subtitle timings"
+                )
+            if starts_after_gap or exceeds_window:
+                groups.append(current)
+                current = []
         current.append(cue)
     if current:
         groups.append(current)

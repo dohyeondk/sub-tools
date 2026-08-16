@@ -108,6 +108,32 @@ def test_generates_wav_from_translated_subtitle_text(tmp_path, monkeypatch):
         assert wav_file.getnframes() == 36000
 
 
+def test_dub_window_uses_latest_end_for_overlapping_cues(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "es.srt").write_text(
+        "1\n00:00:00,000 --> 00:00:10,000\nPrimero.\n\n"
+        "2\n00:00:02,000 --> 00:00:03,000\nSegundo.\n",
+        encoding="utf-8",
+    )
+    fitted_durations = []
+
+    async def fake_call_tts_api(text):
+        return b"\x01\x00", "audio/L16;rate=24000"
+
+    def fake_fit_pcm_duration(pcm, sample_rate, duration):
+        fitted_durations.append(duration)
+        return b"\x01\x00" * round(duration * gemini.PCM_SAMPLE_RATE)
+
+    monkeypatch.setattr(gemini, "_call_tts_api", fake_call_tts_api)
+    monkeypatch.setattr(gemini, "audio_duration", lambda path: 10.0)
+    monkeypatch.setattr(gemini, "_fit_pcm_duration", fake_fit_pcm_duration)
+    config.audio_file = "audio.mp3"
+
+    asyncio.run(gemini._generate_dub_language("es", lambda: None))
+
+    assert fitted_durations == [10.0]
+
+
 def test_dub_groups_preserve_long_gaps_and_limit_drift():
     config.dub_chunk_duration = 60
     config.dub_gap_threshold = 2
@@ -115,7 +141,7 @@ def test_dub_groups_preserve_long_gaps_and_limit_drift():
         Cue(index=1, start=0, end=10, text="one"),
         Cue(index=2, start=10, end=20, text="two"),
         Cue(index=3, start=23, end=30, text="three"),
-        Cue(index=4, start=31, end=95, text="four"),
+        Cue(index=4, start=31, end=90, text="four"),
     ]
 
     groups = gemini._dub_groups(cues)
@@ -125,6 +151,24 @@ def test_dub_groups_preserve_long_gaps_and_limit_drift():
         [3],
         [4],
     ]
+
+
+def test_dub_groups_reject_oversized_cues():
+    config.dub_chunk_duration = 10
+
+    with pytest.raises(ValueError, match="Subtitle #1 spans 11.0s"):
+        gemini._dub_groups([Cue(index=1, start=0, end=11, text="too long")])
+
+
+def test_dub_groups_reject_overlapping_window_overflow():
+    config.dub_chunk_duration = 10
+    cues = [
+        Cue(index=1, start=0, end=8, text="one"),
+        Cue(index=2, start=7, end=15, text="two"),
+    ]
+
+    with pytest.raises(ValueError, match="Overlapping subtitle cues"):
+        gemini._dub_groups(cues)
 
 
 def test_audio_duration_falls_back_to_ffmpeg(monkeypatch):
