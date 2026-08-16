@@ -1,3 +1,4 @@
+import re
 import subprocess
 
 from sub_tools.system.file import should_skip
@@ -75,8 +76,26 @@ def audio_duration(path: str) -> float | None:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         return float(result.stdout.strip())
     except (subprocess.SubprocessError, FileNotFoundError, ValueError):
-        warning("Could not measure audio duration; skipping coverage checks.")
-        return None
+        pass
+
+    # ffprobe is normally installed with ffmpeg, but some distributions package
+    # only the latter. Its input summary still contains the exact media duration.
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-i", path],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", result.stderr)
+        if match:
+            hours, minutes, seconds = match.groups()
+            return int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+    except (subprocess.SubprocessError, FileNotFoundError):
+        pass
+
+    warning("Could not measure audio duration; skipping coverage checks.")
+    return None
 
 
 def media_to_signature() -> None:

@@ -18,7 +18,7 @@ from ..config import config
 from .retry import backoff
 
 DEFAULT_TTS_MODEL = "gemini-2.5-flash-preview-tts"
-DEFAULT_TTS_VOICE = "Kore"
+DEFAULT_TTS_VOICE = "Sadaltager"
 
 # The TTS endpoint returns raw PCM at this shape.
 TTS_SAMPLE_RATE = 24_000

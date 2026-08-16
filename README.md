@@ -54,6 +54,9 @@ sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages en es 
 # Only transcribe without translation
 sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
+# Dub existing subtitles only (uses the {language}.srt files already in the output directory)
+sub-tools --tasks dub --audio-file audio.mp3 --languages es fr
+
 # Specify custom tasks (available: video, audio, signature, transcribe, translate, dub)
 sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
