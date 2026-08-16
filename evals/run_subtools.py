@@ -50,6 +50,13 @@ def main() -> None:
                 args.model,
                 "--retry",
                 str(args.retry),
+                # The corpus clips open with music and end with silence; the
+                # human references leave those uncaptioned too, so a strict
+                # coverage gate would reject correct transcriptions.
+                "--begin-gap-threshold",
+                "30000",
+                "--end-gap-threshold",
+                "30000",
             ]
             subprocess.run(command, check=True)
 

@@ -11,6 +11,7 @@ Repairs are structural only. Subtitle text is never rewritten, so a repaired
 file says exactly what the model said.
 """
 
+import json
 import re
 
 # ``` or ```srt, opening or closing.
@@ -48,6 +49,11 @@ def repair_subtitles(
         notes.append("removed Markdown code fences")
     text = without_fences.strip()
 
+    text, unwrapped = _unwrap_json_envelope(text)
+    if unwrapped:
+        notes.append("unwrapped SRT from a JSON envelope")
+        text = text.replace("\r\n", "\n").strip()
+
     lines, rejoined = _rejoin_split_timestamps(text.split("\n"))
     if rejoined:
         notes.append(f"rejoined {rejoined} timestamp(s) split across two lines")
@@ -64,14 +70,18 @@ def repair_subtitles(
     if demoted:
         notes.append(f"recovered {demoted} timestamp(s) demoted into subtitle text")
 
-    # Discard an exact zero-length junk cue. Leave backwards and out-of-range
-    # cues untouched: inventing a timestamp can silently move real words or
-    # drop the tail of a transcription. Strict validation will reject them and
-    # make the model try again.
+    # Discard an exact zero-length junk cue. Leave out-of-range cues untouched:
+    # inventing a timestamp can silently move real words or drop the tail of a
+    # transcription. Strict validation will reject them and make the model try
+    # again.
     kept = [cue for cue in cues if abs(cue["end"] - cue["start"]) > MIN_CUE_SECONDS]
     if len(kept) != len(cues):
         notes.append(f"dropped {len(cues) - len(kept)} zero-length cue(s)")
     cues = kept
+
+    cues, clamped = _clamp_backwards_ends(cues, duration)
+    if clamped:
+        notes.append(f"clamped {clamped} cue(s) that ended before they started")
 
     if reference is not None:
         cues, restored = _restore_from_reference(cues, reference)
@@ -83,6 +93,54 @@ def repair_subtitles(
         notes.append("reordered cues by start time")
 
     return _render(ordered), notes
+
+
+def _unwrap_json_envelope(text: str) -> tuple[str, bool]:
+    """
+    Extract the SRT when a model answered with JSON like {"result": "1\\n00:00..."}.
+
+    Only a lone string field holding the subtitles is unwrapped; anything more
+    ambiguous is left for validation to reject.
+    """
+    candidate = text.strip()
+    if not candidate.startswith("{") or "-->" not in candidate:
+        return text, False
+    try:
+        data = json.loads(candidate)
+    except ValueError:
+        return text, False
+    if isinstance(data, dict):
+        subtitle_fields = [
+            value for value in data.values() if isinstance(value, str) and "-->" in value
+        ]
+        if len(subtitle_fields) == 1:
+            return subtitle_fields[0], True
+    return text, False
+
+
+def _clamp_backwards_ends(cues: list[dict], duration: float | None) -> tuple[list[dict], int]:
+    """
+    Give a cue whose end precedes its start the one end that cannot be wrong:
+    the moment the next cue begins.
+
+    The start is trusted because the neighbouring cues confirm it; the end is
+    the corrupt half. Clamping changes how long the words stay on screen, never
+    the words themselves. These cues used to be left for a retry, but a model
+    that writes one backwards timestamp in a long recording writes another on
+    the next attempt, so retrying never converged.
+    """
+    fixed = 0
+    for index, cue in enumerate(cues):
+        if cue["end"] > cue["start"]:
+            continue
+        if index + 1 < len(cues) and cues[index + 1]["start"] > cue["start"]:
+            cue["end"] = cues[index + 1]["start"]
+        elif duration is not None and duration > cue["start"]:
+            cue["end"] = duration
+        else:
+            continue
+        fixed += 1
+    return cues, fixed
 
 
 def _rejoin_split_timestamps(lines: list[str]) -> tuple[list[str], int]:
