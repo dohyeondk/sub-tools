@@ -7,7 +7,7 @@ Every case here is a shape a model actually returned, not an invented one.
 import pytest
 
 from sub_tools.subtitles.repair import repair_subtitles
-from sub_tools.subtitles.validator import parse_strict
+from sub_tools.subtitles.validator import find_problems, parse_strict
 
 
 def cues(content):
@@ -130,7 +130,7 @@ class TestStructuralDamage:
 class TestAudioBounds:
     """Timestamps outside the recording cannot be right."""
 
-    def test_pulls_back_cue_beyond_end_of_audio(self):
+    def test_leaves_cue_beyond_end_for_validation(self):
         # "10:00:42,420" parses as ten hours on a 33-minute recording.
         content = (
             "1\n00:00:01,000 --> 00:00:03,000\nFirst.\n\n"
@@ -139,31 +139,34 @@ class TestAudioBounds:
         repaired, notes = repair_subtitles(content, duration=1964.0)
 
         result = cues(repaired)
-        assert all(c.end <= 1964 for c in result)
-        assert any("impossible timestamp" in note for note in notes)
+        errors, _ = find_problems(repaired, duration=1964.0)
+        assert len(result) == 2
+        assert notes == []
+        assert any("after the audio does" in error for error in errors)
 
-    def test_fixes_end_before_start(self):
+    def test_leaves_backwards_timestamp_for_validation(self):
         content = "1\n00:19:22,456 --> 00:19:20,000\nText.\n"
         repaired, _ = repair_subtitles(content)
 
         cue = cues(repaired)[0]
-        assert cue.end > cue.start
+        errors, _ = find_problems(repaired)
+        assert cue.end < cue.start
+        assert any("ends before it starts" in error for error in errors)
 
-    def test_discards_cues_crushed_against_end_of_audio(self):
-        # Seen on a real 33-minute run: several trailing cues had start times
-        # past the end of the recording. Clamping them to the duration left
-        # end == start, which validation rejects, so every retry failed the
-        # same way. A cue with no room left has to go.
+    def test_keeps_all_cues_when_the_tail_runs_past_audio(self):
+        # Clamping a tail cue to the duration can turn later cues into
+        # zero-length entries and silently remove the end of a transcription.
         content = (
-            "1\n00:00:01,000 --> 00:00:03,000\nReal.\n\n"
-            "2\n00:33:20,000 --> 00:33:25,000\nPast the end.\n\n"
-            "3\n00:33:30,000 --> 00:33:35,000\nAlso past the end.\n"
+            "1\n00:00:09,800 --> 00:00:11,000\nFinal words.\n\n"
+            "2\n00:00:11,000 --> 00:00:13,000\nMore final words.\n"
         )
-        repaired, _ = repair_subtitles(content, duration=60.0)
+        repaired, _ = repair_subtitles(content, duration=10.0)
 
         result = cues(repaired)
-        assert all(cue.end > cue.start for cue in result)
-        assert all(cue.end <= 60.0 for cue in result)
+        errors, _ = find_problems(repaired, duration=10.0)
+        assert len(result) == 2
+        assert [cue.text for cue in result] == ["Final words.", "More final words."]
+        assert any("after the audio does" in error for error in errors)
 
 
 class TestTranslationReference:

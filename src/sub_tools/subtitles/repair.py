@@ -28,7 +28,6 @@ DANGLING = re.compile(r"^[\d:,.]+\s*-->\s*$")
 BARE = re.compile(r"^[\d:,.]+$")
 
 MIN_CUE_SECONDS = 0.05
-DEFAULT_CUE_SECONDS = 1.5
 
 
 def repair_subtitles(
@@ -65,9 +64,10 @@ def repair_subtitles(
     if demoted:
         notes.append(f"recovered {demoted} timestamp(s) demoted into subtitle text")
 
-    # Discard junk before anything tries to rescue it. A cue of no length is
-    # noise; a cue that runs backwards is a real cue with a damaged end time,
-    # and those are repaired further down.
+    # Discard an exact zero-length junk cue. Leave backwards and out-of-range
+    # cues untouched: inventing a timestamp can silently move real words or
+    # drop the tail of a transcription. Strict validation will reject them and
+    # make the model try again.
     kept = [cue for cue in cues if abs(cue["end"] - cue["start"]) > MIN_CUE_SECONDS]
     if len(kept) != len(cues):
         notes.append(f"dropped {len(cues) - len(kept)} zero-length cue(s)")
@@ -77,10 +77,6 @@ def repair_subtitles(
         cues, restored = _restore_from_reference(cues, reference)
         if restored:
             notes.append(f"restored {restored} timestamp(s) from the source subtitles")
-
-    cues, bounded = _bound_to_audio(cues, duration)
-    if bounded:
-        notes.append(f"corrected {bounded} impossible timestamp(s)")
 
     ordered = sorted(cues, key=lambda cue: cue["start"])
     if ordered != cues:
@@ -231,34 +227,6 @@ def _restore_from_reference(cues: list[dict], reference: str) -> tuple[list[dict
                 restored += 1
             position = best[1] + 1
     return cues, restored
-
-
-def _bound_to_audio(cues: list[dict], duration: float | None) -> tuple[list[dict], int]:
-    """
-    Pull impossible timestamps back inside the recording.
-
-    A cue crushed against the end of the audio can have no room left to occupy.
-    Those are discarded rather than emitted as zero-length, which would fail
-    validation on every retry and never converge.
-    """
-    count = 0
-    usable = []
-    for index, cue in enumerate(cues):
-        if duration is not None and cue["start"] > duration:
-            cue["start"] = usable[-1]["end"] if usable else 0.0
-            count += 1
-        if duration is not None and cue["end"] > duration:
-            cue["end"] = min(duration, cue["start"] + DEFAULT_CUE_SECONDS)
-            count += 1
-        if cue["end"] <= cue["start"]:
-            room = duration - cue["start"] if duration is not None else DEFAULT_CUE_SECONDS
-            if room <= MIN_CUE_SECONDS:
-                count += 1
-                continue
-            cue["end"] = cue["start"] + min(DEFAULT_CUE_SECONDS, room)
-            count += 1
-        usable.append(cue)
-    return usable, count
 
 
 def _seconds(stamp: str) -> float | None:
