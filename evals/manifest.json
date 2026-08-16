@@ -1,0 +1,42 @@
+[
+  {
+    "name": "obama-2009-06-13",
+    "commons_file": "2009-06-13 President Obama's Weekly Address.ogv",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/56/2009-06-13_President_Obama%27s_Weekly_Address.ogv",
+    "subtitle_url": "https://commons.wikimedia.org/wiki/TimedText:2009-06-13%20President%20Obama%27s%20Weekly%20Address.ogv.en.srt",
+    "duration_seconds": 289.3,
+    "cues": 89
+  },
+  {
+    "name": "obama-2009-09-12",
+    "commons_file": "2009-09-12 President Obama's Weekly Address.ogv",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/42/2009-09-12_President_Obama%27s_Weekly_Address.ogv",
+    "subtitle_url": "https://commons.wikimedia.org/wiki/TimedText:2009-09-12%20President%20Obama%27s%20Weekly%20Address.ogv.en.srt",
+    "duration_seconds": 261.3,
+    "cues": 85
+  },
+  {
+    "name": "obama-2009-11-28",
+    "commons_file": "2009-11-28 President Obama's Weekly Address.ogv",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bb/2009-11-28_President_Obama%27s_Weekly_Address.ogv",
+    "subtitle_url": "https://commons.wikimedia.org/wiki/TimedText:2009-11-28%20President%20Obama%27s%20Weekly%20Address.ogv.en.srt",
+    "duration_seconds": 242.7,
+    "cues": 78
+  },
+  {
+    "name": "nasa-hubble-36th",
+    "commons_file": "\"Cosmic Sea Slug\" Appears in Hubble’s 36th Birthday Image (SVS15002).webm",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/%22Cosmic_Sea_Slug%22_Appears_in_Hubble%E2%80%99s_36th_Birthday_Image_%28SVS15002%29.webm",
+    "subtitle_url": "https://commons.wikimedia.org/wiki/TimedText:%22Cosmic%20Sea%20Slug%22%20Appears%20in%20Hubble%E2%80%99s%2036th%20Birthday%20Image%20%28SVS15002%29.webm.en.srt",
+    "duration_seconds": 299.1,
+    "cues": 86
+  },
+  {
+    "name": "nasa-orion-10-days",
+    "commons_file": "10 Days in Orion (jsc2026m000044).webm",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/19/10_Days_in_Orion_%28jsc2026m000044%29.webm",
+    "subtitle_url": "https://commons.wikimedia.org/wiki/TimedText:10%20Days%20in%20Orion%20%28jsc2026m000044%29.webm.en.srt",
+    "duration_seconds": 306.2,
+    "cues": 85
+  }
+]

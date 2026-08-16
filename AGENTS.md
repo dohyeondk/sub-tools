@@ -90,6 +90,12 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 - Does not implement a local quality score or duplicate the package's edit-distance code
 - Run through the `sub-tools-eval` script; it does not require an API key
 
+**evals/**: Reproducible benchmark built on top of `sub-tools-eval` (see `evals/README.md`)
+- Fetches a public-domain corpus with human-authored reference subtitles from Wikimedia Commons
+- Compares WhisperX, Gemini used directly, and Gemini used as the pipeline's proofreader
+- `normalize.py` applies syntax-only SRT repairs to every variant identically; `verify_sync.py` rejects references that drift from their audio
+- No media is checked in: `manifest.json` holds each clip's download URL and `corpus.py` caches the files outside the repo (`SUB_TOOLS_EVAL_CACHE`, default `~/.cache/sub-tools/evals`)
+
 **config.py**: Central configuration dataclass
 - Validation thresholds (max subtitle duration, gap thresholds)
 - Shared across all modules

@@ -21,3 +21,9 @@ output/
 !tests/data/sample.mp3
 .vscode/
 scripts
+
+# Evaluation run artifacts; the summary that matters lives in README.md
+evals/reports/
+evals/results.json
+evals/results.md
+evals/normalization.json
