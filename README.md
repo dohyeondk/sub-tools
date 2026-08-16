@@ -11,6 +11,7 @@ A toolkit for multilingual subtitles. Gemini transcribes the audio and translate
 - 🧰 Automatic repair of malformed model output, with a retry when repair cannot save it
 - ✅ Strict validation that refuses to ship a broken subtitle file
 - 🌍 Multilingual translation that preserves the source timings
+- 🔊 Optional translated narration with Gemini TTS
 - 📥 Support for HLS streams, direct file URLs, and local files
 - 🎵 Audio fingerprinting using Shazam (macOS only)
 - 📊 Progress tracking with rich terminal output
@@ -53,7 +54,10 @@ sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages en es 
 # Only transcribe without translation
 sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
-# Specify custom tasks (available: video, audio, signature, transcribe, translate)
+# Generate simple translated narration from existing translated SRT files
+sub-tools --tasks dub --languages en es fr
+
+# Specify custom tasks (available: video, audio, signature, transcribe, translate, dub)
 sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
 # Specify a custom Gemini model for transcription and translation
@@ -72,8 +76,16 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
 4. **transcribe**: Gemini turns the audio into subtitles → `{source-language}.srt`
 5. **translate**: Gemini translates those subtitles into each target language → `{language}.srt`
+6. **dub**: Gemini TTS reads each translated subtitle file → `{language}.wav`
 
-By default, all tasks run. You can customize which tasks to run with `--tasks`.
+The `dub` task is opt-in; the existing five tasks continue to run by
+default. It uses `gemini-3.1-flash-tts-preview` and the `Sadaltager` voice unless you pass
+`--tts-model` or `--tts-voice`.
+
+Gemini 3.7 Flash supports audio input but not audio output, so `dub` sends the
+translated SRT text to the dedicated TTS model. It fits gap-aware audio chunks to
+the subtitle timeline and writes a WAV matching the original duration. This does
+not preserve or mix the original speakers, music, or audience reactions.
 
 ## 📏 Transcription evaluation
 
