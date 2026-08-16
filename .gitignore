@@ -19,6 +19,7 @@ output/
 *.mp4
 *.shazamsignature
 !tests/data/sample.mp3
+!tests/fixtures/*.mp4
 .vscode/
 scripts
 
