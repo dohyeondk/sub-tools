@@ -1192,7 +1192,7 @@ wheels = [
 
 [[package]]
 name = "sub-tools"
-version = "0.9.1"
+version = "0.9.2"
 source = { editable = "." }
 dependencies = [
     { name = "audioop-lts", marker = "python_full_version >= '3.13'" },
