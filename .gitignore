@@ -24,6 +24,5 @@ scripts
 
 # Evaluation run artifacts
 evals/reports/
-evals/results.json
-evals/results.md
-evals/normalization.json
+evals/results/
+evals/normalization/

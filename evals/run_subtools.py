@@ -8,10 +8,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from paths import audio_path, load_manifest
+from paths import audio_path, load_manifest, model_variant
 
 ROOT = Path(__file__).parent
-VARIANT = "sub-tools"
 
 
 def main() -> None:
@@ -26,7 +25,8 @@ def main() -> None:
     args = parser.parse_args()
 
     manifest = load_manifest()
-    destination = ROOT / "output" / VARIANT
+    variant = model_variant(args.model)
+    destination = ROOT / "output" / variant
     destination.mkdir(parents=True, exist_ok=True)
 
     for sample in manifest:

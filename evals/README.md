@@ -30,28 +30,30 @@ is rejoined so the file parses.
 
 ## Pipeline
 
-Set the Gemini API key, then run the four commands below:
+Set the Gemini API key and choose a model, then run the four commands below:
 
 ~~~shell
 export GEMINI_API_KEY=...
+MODEL=gemini-3.7-flash
 
 uv run python evals/corpus.py
-uv run python evals/run_subtools.py --model gemini-3.7-flash
-uv run python evals/normalize.py
-uv run python evals/score.py
+uv run python evals/run_subtools.py --model "$MODEL"
+uv run python evals/normalize.py --model "$MODEL"
+uv run python evals/score.py --model "$MODEL"
 ~~~
 
 run_subtools.py runs sub-tools with --tasks transcribe once per clip. The model
 passed with --model is the only evaluation variable. Raw outputs are written to
-evals/output/sub-tools, and existing files are skipped so interrupted runs can
-resume.
+`evals/output/<model>/`, where the model name is made filesystem-safe. Existing
+files are skipped so interrupted runs can resume. This lets runs for different
+models coexist; repeat the commands with a different `MODEL` to compare them.
 
 normalize.py applies syntax-only repairs such as removing code fences,
 normalizing timestamps, and restoring missing blank lines. It writes the
-normalized files to evals/scored/sub-tools before scoring.
+normalized files to `evals/scored/<model>/` before scoring.
 
 score.py runs sub-tools-eval once per clip and macro-averages the metrics. It
-writes the generated report files under evals/reports and the aggregate files
-evals/results.json and evals/results.md.
+writes the generated report files under `evals/reports/<model>/` and the
+model-specific aggregate files under `evals/results/`.
 
 All run artifacts are gitignored and can be regenerated at any time.

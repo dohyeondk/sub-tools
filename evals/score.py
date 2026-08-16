@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import statistics
 import subprocess
 from pathlib import Path
 
-from paths import load_manifest, reference_path
+from paths import load_manifest, model_variant, reference_path
 
 ROOT = Path(__file__).parent
-VARIANT = "sub-tools"
-REPORT_DIR = ROOT / "reports"
-SCORED = ROOT / "scored" / VARIANT
+PIPELINE = "sub-tools"
 
 METRICS = [
     ("suber", "SubER ↓"),
@@ -29,12 +28,12 @@ METRICS = [
 ]
 
 
-def score_sample(sample: dict) -> dict:
-    hypothesis = SCORED / f"{sample['name']}.srt"
+def score_sample(sample: dict, model: str, variant: str) -> dict:
+    hypothesis = ROOT / "scored" / variant / f"{sample['name']}.srt"
     if not hypothesis.exists():
         raise SystemExit(f"missing normalized subtitles: {hypothesis}")
 
-    report_path = REPORT_DIR / f"{sample['name']}.json"
+    report_path = ROOT / "reports" / variant / f"{sample['name']}.json"
     command = [
         "sub-tools-eval",
         "--reference",
@@ -42,7 +41,7 @@ def score_sample(sample: dict) -> dict:
         "--language",
         "en",
         "--hypothesis",
-        f"{VARIANT}={hypothesis}",
+        f"{model}={hypothesis}",
         "--output",
         str(report_path),
     ]
@@ -52,12 +51,16 @@ def score_sample(sample: dict) -> dict:
 
 
 def main() -> None:
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Score one sub-tools model run.")
+    parser.add_argument("--model", required=True, help="Gemini model used to generate the subtitles.")
+    args = parser.parse_args()
+
+    variant = model_variant(args.model)
     manifest = load_manifest()
 
     per_sample = {}
     for sample in manifest:
-        per_sample[sample["name"]] = score_sample(sample)
+        per_sample[sample["name"]] = score_sample(sample, args.model, variant)
         print(f"scored {sample['name']}", flush=True)
 
     aggregate = {
@@ -82,19 +85,23 @@ def main() -> None:
             for sample in manifest
         ],
         "aggregation": "macro-average over samples",
-        "variant": VARIANT,
+        "pipeline": PIPELINE,
+        "model": args.model,
+        "variant": variant,
         "per_sample": per_sample,
         "aggregate": aggregate,
     }
-    (ROOT / "results.json").write_text(
+    result_path = ROOT / "results" / f"{variant}.json"
+    result_path.parent.mkdir(parents=True, exist_ok=True)
+    result_path.write_text(
         json.dumps(result, indent=2) + "\n", encoding="utf-8"
     )
 
-    header = "| variant | " + " | ".join(label for _, label in METRICS) + " |"
+    header = "| model | " + " | ".join(label for _, label in METRICS) + " |"
     divider = "|---" + "|---:" * len(METRICS) + "|"
     cells = " | ".join(f"{aggregate[key]:.2f}" for key, _ in METRICS)
-    table = "\n".join([header, divider, f"| {VARIANT} | {cells} |"])
-    (ROOT / "results.md").write_text(table + "\n", encoding="utf-8")
+    table = "\n".join([header, divider, f"| {args.model} | {cells} |"])
+    (ROOT / "results" / f"{variant}.md").write_text(table + "\n", encoding="utf-8")
     print(table)
 
 

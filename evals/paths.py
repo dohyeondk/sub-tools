@@ -10,10 +10,20 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).parent
 MANIFEST = ROOT / "manifest.json"
+
+
+def model_variant(model: str) -> str:
+    """Return a filesystem-safe, stable name for a Gemini model ID."""
+
+    variant = re.sub(r"[^A-Za-z0-9._-]+", "-", model.strip()).strip(".-_")
+    if not variant:
+        raise SystemExit("model must contain at least one alphanumeric character")
+    return variant
 
 
 def cache_dir() -> Path:

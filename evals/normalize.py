@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from pathlib import Path
 
+from paths import model_variant
+
 ROOT = Path(__file__).parent
-VARIANT = "sub-tools"
-SOURCE = ROOT / "output" / VARIANT
-DESTINATION = ROOT / "scored" / VARIANT
 
 FENCE = re.compile(r"^\s*\x60\x60\x60[a-zA-Z]*\s*\n|\n\s*\x60\x60\x60\s*$")
 CUE_LINE = re.compile(r"^(?P<start>[\d:,.]+)\s*-->\s*(?P<end>[\d:,.]+)(?P<rest>.*)$")
@@ -59,31 +59,48 @@ def normalize(text: str) -> str:
 
 
 def main() -> None:
-    if not SOURCE.is_dir():
-        raise SystemExit(f"missing {SOURCE}; run evals/run_subtools.py first")
+    parser = argparse.ArgumentParser(description="Normalize one sub-tools model run before scoring.")
+    parser.add_argument("--model", required=True, help="Gemini model used to generate the subtitles.")
+    args = parser.parse_args()
 
-    DESTINATION.mkdir(parents=True, exist_ok=True)
-    sources = sorted(SOURCE.glob("*.srt"))
+    variant = model_variant(args.model)
+    source_dir = ROOT / "output" / variant
+    destination = ROOT / "scored" / variant
+
+    if not source_dir.is_dir():
+        raise SystemExit(
+            f"missing {source_dir}; run evals/run_subtools.py --model {args.model} first"
+        )
+
+    destination.mkdir(parents=True, exist_ok=True)
+    sources = sorted(source_dir.glob("*.srt"))
     if not sources:
-        raise SystemExit(f"no subtitles found in {SOURCE}; run evals/run_subtools.py first")
+        raise SystemExit(
+            f"no subtitles found in {source_dir}; "
+            f"run evals/run_subtools.py --model {args.model} first"
+        )
 
     repaired = []
-    for source in sources:
-        original = source.read_text(encoding="utf-8")
+    for source_file in sources:
+        original = source_file.read_text(encoding="utf-8")
         fixed = normalize(original)
-        (DESTINATION / source.name).write_text(fixed, encoding="utf-8")
+        (destination / source_file.name).write_text(fixed, encoding="utf-8")
         if fixed.strip() != original.replace("\r\n", "\n").strip():
-            repaired.append(source.stem)
+            repaired.append(source_file.stem)
 
     report = {
-        "variant": VARIANT,
+        "pipeline": "sub-tools",
+        "model": args.model,
+        "variant": variant,
         "files": len(sources),
         "needed_repair": repaired,
     }
-    (ROOT / "normalization.json").write_text(
+    report_path = ROOT / "normalization" / f"{variant}.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
-    print(f"{VARIANT}: repaired {len(repaired)}/{len(sources)}")
+    print(f"{args.model}: repaired {len(repaired)}/{len(sources)}")
 
 
 if __name__ == "__main__":
