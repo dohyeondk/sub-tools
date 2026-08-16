@@ -51,6 +51,15 @@ async def _transcribe() -> None:
     5. Use correct punctuation and capitalization
     6. The output must be valid SRT format
 
+    SUBTITLE STYLE:
+    1. At most 42 characters per line
+    2. At most 2 lines per cue, separated by a single newline
+    3. Break a line at a clause boundary, never in the middle of a word or a name
+    4. Keep each cue under 7 seconds
+    5. Keep the reading speed at or below 20 characters per second
+    6. When a sentence will not fit, end the cue and start another one rather than
+       letting a line run long
+
     Return the SRT file.
     """
 
