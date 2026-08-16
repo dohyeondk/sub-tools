@@ -21,3 +21,6 @@ output/
 !tests/data/sample.mp3
 .vscode/
 scripts
+
+# Local secrets
+.env

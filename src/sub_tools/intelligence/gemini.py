@@ -1,240 +1,64 @@
+"""
+Gemini provider: one subtitle request, one text-to-speech request.
+
+The prompting, repair, and validation loop lives in pipeline.py; this module
+only talks to the API.
+"""
+
 import asyncio
-from typing import Callable, Optional
+import io
+import wave
+from typing import Optional
 
 from google import genai
 from google.api_core import exceptions as google_exceptions
 from google.genai import types
-from rich.progress import Progress
-
-from sub_tools.system.console import info, warning
-from sub_tools.system.file import should_skip
-from sub_tools.system.language import get_language_name
 
 from ..config import config
-from ..media.converter import audio_duration
-from ..subtitles.repair import repair_subtitles
-from ..subtitles.validator import SubtitleValidationError, find_problems
+from .retry import backoff
+
+DEFAULT_TTS_MODEL = "gemini-2.5-flash-preview-tts"
+DEFAULT_TTS_VOICE = "Kore"
+
+# The TTS endpoint returns raw PCM at this shape.
+TTS_SAMPLE_RATE = 24_000
+
+# Token and character counts per model, for cost accounting. TTS characters
+# are tracked because that is what pricing quotes.
+usage: dict[str, dict] = {}
+
+_uploaded_files: dict[str, types.File] = {}
 
 
-def transcribe() -> None:
+def accepts_audio() -> bool:
     """
-    Transcribe the audio into subtitles using Gemini.
+    Gemini generation models hear audio natively.
     """
-    if should_skip(f"{config.source_language}.srt"):
-        return
-
-    asyncio.run(_transcribe())
+    return True
 
 
-async def _transcribe() -> None:
-    info("Transcribing...")
-
-    language_code = config.source_language
-    language = get_language_name(language_code)
-
-    system_instruction = f"""
-    You are a professional transcriptionist.
-    You will receive an audio file in {language}.
-
-    Your task is to:
-    1. Listen to the audio carefully
-    2. Transcribe every spoken word accurately
-    3. Split the transcript into subtitle cues that follow the speech
-    4. Give every cue start and end timestamps that match when the words are spoken
-
-    CRITICAL REQUIREMENTS:
-    1. Output ONLY the SRT file. No code blocks, no explanations.
-    2. Preserve the SRT format perfectly (number, timestamp, text, blank line)
-    3. Every timestamp must be HH:MM:SS,mmm --> HH:MM:SS,mmm, always including the
-       hours field, even after the first hour of audio
-    4. Cover the entire recording from beginning to end, including the final minutes
-    5. Use correct punctuation and capitalization
-    6. The output must be valid SRT format
-
-    Return the SRT file.
+def prepare_audio() -> types.File:
     """
-
-    file = _upload_file(config.audio_file)
-    await _generate_subtitles(
-        output_file=f"{language_code}.srt",
-        system_instruction=system_instruction,
-        file=file,
-        text=f"Transcribe this {language} audio into an SRT subtitle file.",
-    )
-
-
-def translate() -> None:
+    Upload the configured audio file once and reuse it across requests.
     """
-    Translate the source subtitles into each target language using Gemini.
-    """
-    asyncio.run(_translate())
+    path = config.audio_file
+    if path not in _uploaded_files:
+        client = genai.Client(api_key=config.gemini_api_key)
+        _uploaded_files[path] = client.files.upload(file=path)
+    return _uploaded_files[path]
 
 
-async def _translate() -> None:
-    source_language_code = config.source_language
-    source_file = f"{source_language_code}.srt"
-
-    with open(source_file, "r", encoding="utf-8") as f:
-        srt_content = f.read()
-
-    target_language_codes = [
-        language
-        for language in config.languages
-        if language != source_language_code and not should_skip(f"{language}.srt")
-    ]
-
-    if not target_language_codes:
-        return
-
-    info("Translating...")
-
-    tasks = []
-
-    with Progress() as progress:
-        progress_task = progress.add_task("Translation", total=len(target_language_codes))
-
-        file = _upload_file(config.audio_file)
-
-        for language_code in target_language_codes:
-            task = asyncio.create_task(
-                _translate_language(
-                    file=file,
-                    srt_content=srt_content,
-                    source_language_code=source_language_code,
-                    target_language_code=language_code,
-                    completion=lambda: progress.update(progress_task, advance=1),
-                )
-            )
-            tasks.append(task)
-
-        await asyncio.gather(*tasks)
-
-
-async def _translate_language(
-    file: types.File,
-    srt_content: str,
-    source_language_code: str,
-    target_language_code: str,
-    completion: Callable[[], None],
-) -> None:
-    source_language = get_language_name(source_language_code)
-    target_language = get_language_name(target_language_code)
-
-    system_instruction = f"""
-    You are a professional translator specializing in subtitle translation.
-    You will receive an {source_language} SRT subtitle file and the corresponding audio file.
-
-    Your task is to:
-    1. Translate the {source_language} subtitles to {target_language}
-    2. Listen to the audio to understand context and tone
-    3. Keep the exact same timing (timestamps) as the input SRT
-    4. Ensure translations are natural and culturally appropriate for {target_language}
-
-    CRITICAL REQUIREMENTS:
-    1. Output ONLY the translated SRT file in {target_language}. No code blocks, no explanations.
-    2. Keep ALL timestamps exactly as they are in the input SRT
-    3. Return exactly the same number of cues as the input, in the same order
-    4. Preserve the SRT format perfectly (number, timestamp, text, blank line)
-    5. Only translate the text content, not the structure or timing
-    6. All subtitle text must be in {target_language}
-
-    Translation Guidelines:
-    - Use natural, conversational {target_language}
-    - Preserve the tone and meaning of the original {source_language}
-    - Keep proper names in their original form unless they have standard {target_language} equivalents
-    - Maintain [sound effects] in brackets
-    - Use appropriate punctuation for {target_language}
-
-    Return the translated SRT file in {target_language}.
-    """
-
-    await _generate_subtitles(
-        output_file=f"{target_language_code}.srt",
-        system_instruction=system_instruction,
-        file=file,
-        text=f"{source_language} SRT to translate:\n\n{srt_content}",
-        reference=srt_content,
-    )
-    completion()
-
-
-async def _generate_subtitles(
-    output_file: str,
+async def generate(
     system_instruction: str,
-    file: Optional[types.File] = None,
     text: Optional[str] = None,
-    reference: Optional[str] = None,
-) -> None:
-    """
-    Ask Gemini for subtitles, repairing and checking the answer before accepting it.
-
-    Models get the words right far more reliably than the container, so a reply
-    that fails to parse is repaired first and only re-requested if the repair
-    cannot save it.
-    """
-    duration = audio_duration(config.audio_file)
-    attempts = max(1, config.retry)
-    last_errors: list[str] = []
-
-    for attempt in range(attempts):
-        content = await _call_gemini_api(
-            system_instruction=system_instruction,
-            file=file,
-            text=text,
-        )
-
-        if not content or "-->" not in content:
-            last_errors = ["response contained no subtitles"]
-            _report_attempt(output_file, attempt, attempts, last_errors)
-            continue
-
-        repaired, notes = repair_subtitles(content, duration=duration, reference=reference)
-        errors, warnings = find_problems(repaired, duration=duration, reference=reference)
-
-        if errors:
-            last_errors = errors
-            _report_attempt(output_file, attempt, attempts, errors)
-            continue
-
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(repaired)
-
-        for note in notes:
-            info(f"{output_file}: repaired — {note}")
-        for message in warnings:
-            warning(f"{output_file}: {message}")
-        return
-
-    raise SubtitleValidationError(
-        f"Could not produce valid subtitles for {output_file} "
-        f"after {attempts} attempt(s): {'; '.join(last_errors)}"
-    )
-
-
-def _report_attempt(output_file: str, attempt: int, attempts: int, errors: list[str]) -> None:
-    """
-    Explain why an answer was rejected before asking again.
-    """
-    reason = "; ".join(errors)
-    if attempt + 1 < attempts:
-        warning(f"{output_file}: attempt {attempt + 1}/{attempts} rejected ({reason}); retrying")
-    else:
-        warning(f"{output_file}: attempt {attempt + 1}/{attempts} rejected ({reason})")
-
-
-async def _call_gemini_api(
-    system_instruction: str,
-    file: Optional[types.File] = None,
-    text: Optional[str] = None,
+    with_audio: bool = True,
 ) -> Optional[str]:
     """
-    Call the Gemini API once, retrying only transient server-side failures.
+    Ask Gemini once for subtitles, retrying only transient server-side failures.
     """
     client = genai.Client(api_key=config.gemini_api_key)
 
-    parts = []
-    if file:
-        parts.append(file)
+    parts = [prepare_audio()] if with_audio else []
     if text:
         parts.append(types.Part.from_text(text=text))
 
@@ -245,7 +69,7 @@ async def _call_gemini_api(
     for attempt in range(config.retry):
         try:
             response = await client.aio.models.generate_content(
-                model=config.gemini_model,
+                model=config.model,
                 contents=parts,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
@@ -256,35 +80,94 @@ async def _call_gemini_api(
                     tools=tools,
                 ),
             )
+            _record_usage(response)
             return response.text
 
         except (google_exceptions.ResourceExhausted, google_exceptions.ServiceUnavailable) as e:
             if attempt < config.retry - 1:
-                await asyncio.sleep(_backoff(attempt))
+                await asyncio.sleep(backoff(attempt))
                 continue
             raise e
         except Exception as e:
             message = str(e)
             # The SDK surfaces 429/503 as generic errors depending on transport.
             if ("429" in message or "503" in message) and attempt < config.retry - 1:
-                await asyncio.sleep(_backoff(attempt))
+                await asyncio.sleep(backoff(attempt))
                 continue
             raise e
 
     return None
 
 
-def _backoff(attempt: int) -> int:
+async def speak(text: str, language: str) -> bytes:
     """
-    Wait long enough for a capacity problem to clear.
-
-    "High demand" responses persist for far longer than the one to four seconds
-    an unscaled backoff would wait.
+    Turn one piece of text into speech, returned as WAV bytes.
     """
-    return min(60, 5 * 2**attempt)
-
-
-def _upload_file(file_path: str) -> types.File:
     client = genai.Client(api_key=config.gemini_api_key)
-    file = client.files.upload(file=file_path)
-    return file
+
+    voice = config.tts_voice or DEFAULT_TTS_VOICE
+    response = await client.aio.models.generate_content(
+        model=config.tts_model or DEFAULT_TTS_MODEL,
+        contents=text,
+        config=types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice),
+                ),
+            ),
+        ),
+    )
+
+    model = config.tts_model or DEFAULT_TTS_MODEL
+    bucket = _bucket(model)
+    bucket["requests"] += 1
+    bucket["tts_characters"] += len(text)
+    meta = getattr(response, "usage_metadata", None)
+    if meta and meta.candidates_token_count:
+        bucket["tts_output_tokens"] += meta.candidates_token_count
+
+    pcm = response.candidates[0].content.parts[0].inline_data.data
+    return _pcm_to_wav(pcm)
+
+
+def _bucket(model: str) -> dict:
+    return usage.setdefault(
+        model,
+        {
+            "requests": 0,
+            "input_tokens": 0,
+            "audio_input_tokens": 0,
+            "output_tokens": 0,
+            "tts_characters": 0,
+            "tts_output_tokens": 0,
+        },
+    )
+
+
+def _record_usage(response) -> None:
+    meta = getattr(response, "usage_metadata", None)
+    if not meta:
+        return
+    bucket = _bucket(config.model)
+    bucket["requests"] += 1
+    bucket["input_tokens"] += meta.prompt_token_count or 0
+    bucket["output_tokens"] += (meta.candidates_token_count or 0) + (
+        meta.thoughts_token_count or 0
+    )
+    for detail in meta.prompt_tokens_details or []:
+        if detail.modality == types.MediaModality.AUDIO:
+            bucket["audio_input_tokens"] += detail.token_count or 0
+
+
+def _pcm_to_wav(pcm: bytes) -> bytes:
+    """
+    Wrap the raw 16-bit mono PCM that the TTS endpoint returns in a WAV header.
+    """
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(TTS_SAMPLE_RATE)
+        wav.writeframes(pcm)
+    return buffer.getvalue()

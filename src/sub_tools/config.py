@@ -6,7 +6,10 @@ from dataclasses import dataclass, field, fields
 from typing import Any
 
 
-DEFAULT_GEMINI_MODEL = "gemini-3.7-flash"
+DEFAULT_MODEL = "gemini-3.7-flash"
+
+# Prefixes that identify an OpenAI model name, e.g. gpt-5.6-luna.
+OPENAI_MODEL_PREFIXES = ("gpt", "chatgpt", "o1", "o3", "o4")
 
 
 @dataclass
@@ -36,9 +39,13 @@ class Config:
     retry: int = 3
     debug: bool = False
 
-    # Gemini
+    # Model / provider
+    model: str = DEFAULT_MODEL
     gemini_api_key: str | None = None
-    gemini_model: str = DEFAULT_GEMINI_MODEL
+    openai_api_key: str | None = None
+    audio_model: str | None = None  # Provider default is used when unset
+    tts_model: str | None = None  # Provider default is used when unset
+    tts_voice: str | None = None  # Provider default is used when unset
 
     # Validation
     max_valid_duration: int = (
@@ -53,6 +60,25 @@ class Config:
     max_missing_ratio: float = (
         0.02  # Share of source subtitles a translation may drop before it is rejected
     )
+
+    @property
+    def provider(self) -> str:
+        """
+        The API provider implied by the model name: "openai" or "gemini".
+        """
+        name = self.model.lower()
+        if name.startswith(OPENAI_MODEL_PREFIXES):
+            return "openai"
+        return "gemini"
+
+    @property
+    def api_key(self) -> str | None:
+        """
+        The API key for the selected provider.
+        """
+        if self.provider == "openai":
+            return self.openai_api_key
+        return self.gemini_api_key
 
 
 # Global config instance

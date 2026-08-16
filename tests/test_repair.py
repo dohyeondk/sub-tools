@@ -202,3 +202,54 @@ class TestTranslationReference:
         assert result[0].start == pytest.approx(4.0)
         assert result[0].text == "둘."
         assert any("restored" in note for note in notes)
+
+
+class TestClampBackwardsEnds:
+    """A backwards end is corrupt; the next cue's start is the only safe end."""
+
+    def test_backwards_cue_is_clamped_to_the_next_start(self):
+        content = (
+            "1\n00:00:01,000 --> 00:00:03,000\nFirst\n\n"
+            "2\n00:00:03,000 --> 00:00:02,000\nBackwards\n\n"
+            "3\n00:00:05,500 --> 00:00:07,000\nThird\n"
+        )
+        repaired, notes = repair_subtitles(content)
+        assert "00:00:03,000 --> 00:00:05,500" in repaired
+        assert any("clamped 1 cue(s)" in note for note in notes)
+        errors, _ = find_problems(repaired)
+        assert errors == []
+
+    def test_backwards_last_cue_is_clamped_to_the_audio_end(self):
+        content = (
+            "1\n00:00:01,000 --> 00:00:03,000\nFirst\n\n"
+            "2\n00:00:04,000 --> 00:00:02,000\nLast\n"
+        )
+        repaired, _ = repair_subtitles(content, duration=6.0)
+        assert "00:00:04,000 --> 00:00:06,000" in repaired
+
+    def test_backwards_last_cue_without_duration_is_left_for_retry(self):
+        content = (
+            "1\n00:00:01,000 --> 00:00:03,000\nFirst\n\n"
+            "2\n00:00:04,000 --> 00:00:02,000\nLast\n"
+        )
+        repaired, _ = repair_subtitles(content)
+        errors, _ = find_problems(repaired)
+        assert any("ends before it starts" in error for error in errors)
+
+
+class TestJsonEnvelope:
+    """Audio models sometimes wrap the whole SRT in a JSON object."""
+
+    def test_srt_is_unwrapped_from_a_json_result_field(self):
+        content = '{"result": "1\\n00:00:01,000 --> 00:00:03,000\\nHello there.\\n\\n2\\n00:00:03,000 --> 00:00:05,000\\nWelcome back."}'
+        repaired, notes = repair_subtitles(content)
+        assert "Hello there." in repaired
+        assert any("JSON envelope" in note for note in notes)
+        errors, _ = find_problems(repaired)
+        assert errors == []
+
+    def test_plain_srt_starting_with_a_brace_in_text_is_untouched(self):
+        content = "1\n00:00:01,000 --> 00:00:03,000\n{pause} Hello.\n"
+        repaired, notes = repair_subtitles(content)
+        assert "{pause} Hello." in repaired
+        assert not any("JSON" in note for note in notes)

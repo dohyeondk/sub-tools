@@ -23,7 +23,10 @@ def build_parser() -> ArgumentParser:
         "-t",
         nargs="+",
         default=list(config.tasks),
-        help="List of tasks to perform (default: %(default)s).",
+        help=(
+            "List of tasks to perform (default: %(default)s). "
+            "Add 'dub' to speak the generated subtitles into a translated MP3 per language."
+        ),
     )
 
     parser.add_argument(
@@ -94,15 +97,64 @@ def build_parser() -> ArgumentParser:
         "--gemini-api-key",
         action=EnvDefault,
         env_name="GEMINI_API_KEY",
+        required=False,
         help="Gemini API Key. If not provided, the script tries to use the GEMINI_API_KEY environment variable.",
+    )
+
+    parser.add_argument(
+        "--openai-api-key",
+        action=EnvDefault,
+        env_name="OPENAI_API_KEY",
+        required=False,
+        help="OpenAI API Key, used when an OpenAI model is selected. If not provided, the script tries to use the OPENAI_API_KEY environment variable.",
     )
 
     parser.add_argument(
         "--model",
         "-m",
-        dest="gemini_model",
-        default=config.gemini_model,
-        help="Gemini model to use (default: %(default)s).",
+        dest="model",
+        default=config.model,
+        help=(
+            "Model for transcription and translation (default: %(default)s). "
+            "Gemini models use the Gemini API; OpenAI models such as gpt-5.6-luna use the OpenAI API."
+        ),
+    )
+
+    parser.add_argument(
+        "--audio-model",
+        default=config.audio_model,
+        help=(
+            "Model that listens to the audio when the main model cannot. OpenAI text models "
+            "such as gpt-5.6-luna transcribe through this model (default: whisper-1 via the "
+            "transcription API; gpt-audio-* models are also accepted); Gemini models hear "
+            "audio natively and ignore it."
+        ),
+    )
+
+    parser.add_argument(
+        "--tts-model",
+        default=config.tts_model,
+        help="Text-to-speech model for the dub task (default: the selected provider's cheapest TTS model).",
+    )
+
+    parser.add_argument(
+        "--tts-voice",
+        default=config.tts_voice,
+        help="Voice for the dub task (default: the selected provider's default voice).",
+    )
+
+    parser.add_argument(
+        "--begin-gap-threshold",
+        type=int,
+        default=config.begin_gap_threshold,
+        help="Maximum allowed silence before the first subtitle, in ms (default: %(default)s). Raise it for media with music intros.",
+    )
+
+    parser.add_argument(
+        "--end-gap-threshold",
+        type=int,
+        default=config.end_gap_threshold,
+        help="Maximum allowed silence after the last subtitle, in ms (default: %(default)s). Raise it for media with credits or outros.",
     )
 
     parser.add_argument(

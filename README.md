@@ -3,14 +3,15 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A toolkit for multilingual subtitles. Gemini transcribes the audio and translates the result; every answer is repaired and checked before it is accepted. Gemini 3.7 Flash is the primary model.
+A toolkit for multilingual subtitles. A model transcribes the audio and translates the result; every answer is repaired and checked before it is accepted. Gemini 3.7 Flash is the primary model; OpenAI models such as GPT-5.6 Luna are supported as a lower-cost alternative.
 
 ## ✨ Features
 
-- 🎯 Transcription with Gemini straight from audio to SRT
+- 🎯 Transcription straight from audio to SRT, with Gemini or an OpenAI model
 - 🧰 Automatic repair of malformed model output, with a retry when repair cannot save it
 - ✅ Strict validation that refuses to ship a broken subtitle file
 - 🌍 Multilingual translation that preserves the source timings
+- 🔊 Dubbing: subtitles spoken back into a timing-aligned MP3 per language
 - 📥 Support for HLS streams, direct file URLs, and local files
 - 🎵 Audio fingerprinting using Shazam (macOS only)
 - 📊 Progress tracking with rich terminal output
@@ -53,15 +54,37 @@ sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages en es 
 # Only transcribe without translation
 sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
-# Specify custom tasks (available: video, audio, signature, transcribe, translate)
+# Specify custom tasks (available: video, audio, signature, transcribe, translate, dub)
 sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
 # Specify a custom Gemini model for transcription and translation
 sub-tools -i https://example.com/video.mp4 --languages en --model gemini-3.6-flash
 
+# Use an OpenAI model instead of Gemini (reads OPENAI_API_KEY)
+export OPENAI_API_KEY={your_api_key}
+sub-tools -i https://example.com/video.mp4 --languages en es --model gpt-5.6-luna
+
+# Dub: speak the translated subtitles into es.mp3 and fr.mp3
+sub-tools --tasks transcribe translate dub --audio-file audio.mp3 --languages es fr
+
 # Specify output directory (default: output)
 sub-tools -i https://example.com/video.mp4 --languages en --output my-subtitles
 ```
+
+### Choosing a provider
+
+The provider follows from the model name: `gpt-*` models call the OpenAI API with
+`OPENAI_API_KEY` (or `--openai-api-key`), everything else calls the Gemini API with
+`GEMINI_API_KEY` (or `--gemini-api-key`). The same repair and validation loop runs
+either way.
+
+OpenAI text models such as `gpt-5.6-luna` cannot hear audio, so transcription is
+routed to an audio-capable model (`whisper-1` on the transcription API by default;
+override with `--audio-model`, which also accepts `gpt-audio-*` chat models) while
+the selected model handles translation text-only. Audio
+sent to OpenAI is inlined into the request; files over 15 MB are automatically
+re-encoded to mono 32 kbit/s MP3, which fits roughly an hour of speech under the
+20 MB request cap.
 
 ### Pipeline Tasks
 
@@ -70,10 +93,21 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 1. **video**: Downloads media from URL (HLS or direct) → `video.mp4`
 2. **audio**: Extracts audio track → `audio.mp3`
 3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
-4. **transcribe**: Gemini turns the audio into subtitles → `{source-language}.srt`
-5. **translate**: Gemini translates those subtitles into each target language → `{language}.srt`
+4. **transcribe**: The model turns the audio into subtitles → `{source-language}.srt`
+5. **translate**: The model translates those subtitles into each target language → `{language}.srt`
+6. **dub**: Text-to-speech speaks each `{language}.srt` into a timing-aligned `{language}.mp3`
 
-By default, all tasks run. You can customize which tasks to run with `--tasks`.
+By default, all tasks except `dub` run. You can customize which tasks to run with `--tasks`.
+
+### Dubbing
+
+Each subtitle cue is spoken by the provider's text-to-speech model (OpenAI:
+`gpt-4o-mini-tts`, Gemini: `gemini-2.5-flash-preview-tts`; override with
+`--tts-model` and `--tts-voice`) and placed at the cue's start time over silence,
+producing an MP3 the same length as the original recording. Speech that runs longer
+than the original speaker took is sped up (at most 2×) rather than talking over the
+next cue, and `[sound effects]` are not spoken. The dub uses the same provider as
+`--model`.
 
 ## 📏 Transcription evaluation
 

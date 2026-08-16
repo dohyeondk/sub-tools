@@ -1,4 +1,5 @@
-from sub_tools.intelligence.gemini import transcribe, translate
+from sub_tools.intelligence.pipeline import transcribe, translate
+from sub_tools.media.dubber import dub
 
 from .arguments.parser import build_parser, parse_args
 from .config import config
@@ -12,6 +13,12 @@ def main():
     parsed = parse_args(parser)
 
     step = 1
+
+    def require_api_key() -> None:
+        if not (config.api_key and config.api_key.strip()):
+            parsed.func()
+            name = "OpenAI" if config.provider == "openai" else "Gemini"
+            raise Exception(f"No {name} API Key provided")
 
     try:
         ensure_output_directory(config.output_directory)
@@ -35,21 +42,21 @@ def main():
             step += 1
 
         if "transcribe" in config.tasks:
-            if not (config.gemini_api_key and config.gemini_api_key.strip()):
-                parsed.func()
-                raise Exception("No Gemini API Key provided")
-
+            require_api_key()
             header(f"{step}. Transcribe")
             transcribe()
             step += 1
 
         if "translate" in config.tasks:
-            if not (config.gemini_api_key and config.gemini_api_key.strip()):
-                parsed.func()
-                raise Exception("No Gemini API Key provided")
-
+            require_api_key()
             header(f"{step}. Translate")
             translate()
+            step += 1
+
+        if "dub" in config.tasks:
+            require_api_key()
+            header(f"{step}. Dub")
+            dub()
             step += 1
 
     except Exception as e:
