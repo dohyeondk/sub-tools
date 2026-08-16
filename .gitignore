@@ -22,7 +22,7 @@ output/
 .vscode/
 scripts
 
-# Evaluation run artifacts; the summary that matters lives in README.md
+# Evaluation run artifacts
 evals/reports/
 evals/results.json
 evals/results.md

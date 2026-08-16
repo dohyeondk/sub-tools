@@ -88,15 +88,15 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 - Errors mean retry (malformed, backwards, outside the audio, stops early, lost too much of a translation); warnings mean ship it and say so
 
 **evaluation/transcription.py**: Reference-based scoring for generated SRT files
-- Keeps evaluation independent from model execution so variants share the same input
+- Keeps evaluation independent from model execution so generated outputs are scored against the same input
 - Delegates SubER, AS-WER, AS-CER, AS-BLEU, AS-TER, AS-chrF, t-WER, t-CER, t-BLEU, t-TER, and t-chrF to the pinned `subtitle-edit-rate` package
 - Does not implement a local quality score or duplicate the package's edit-distance code
 - Run through the `sub-tools-eval` script; it does not require an API key
 
-**evals/**: Reproducible benchmark built on top of `sub-tools-eval` (see `evals/README.md`)
+**evals/**: Reproducible benchmark for the `sub-tools` transcription pipeline (see `evals/README.md`)
 - Fetches a public-domain corpus with human-authored reference subtitles from Wikimedia Commons
-- Compares transcription variants against the human references; the numbers behind the current design are in the project README
-- `normalize.py` applies syntax-only SRT repairs to every variant identically; `verify_sync.py` rejects references that drift from their audio
+- Runs `sub-tools` with a selected Gemini model and scores its output against the human references
+- `normalize.py` applies syntax-only SRT repairs before scoring
 - No media is checked in: `manifest.json` holds each clip's download URL and `corpus.py` caches the files outside the repo (`SUB_TOOLS_EVAL_CACHE`, default `~/.cache/sub-tools/evals`)
 
 **config.py**: Central configuration dataclass

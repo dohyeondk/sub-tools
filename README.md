@@ -133,80 +133,8 @@ To compare models or settings, pass each generated file as a `--hypothesis`. The
 Markdown report shows one row per variant; lower error rates and higher BLEU/chrF
 indicate a closer match to the reference.
 
-### Results
-
-These are the measurements that produced the current design. They were taken
-when the pipeline still ran WhisperX and used Gemini only to proofread, and they
-are the reason it no longer does.
-
-Measured on 23.3 minutes of public-domain speech: three White House weekly
-addresses (single speaker, prepared remarks) and two NASA videos (narration and a
-multi-speaker interview). Each clip comes from Wikimedia Commons with a
-human-authored English subtitle track as the reference. No media is checked in —
-`evals/manifest.json` records each clip's download URL and `evals/corpus.py`
-fetches it on demand.
-
-"Direct" means the model was handed the audio and asked for a subtitle file, so
-it did both transcription and segmentation. "Proofread" was the previous
-architecture: WhisperX transcribed, and the model edited the text without moving
-the timings. Both use identical generation settings.
-
-Macro-averaged over the five clips:
-
-| variant | SubER ↓ | AS-WER ↓ | AS-CER ↓ | AS-BLEU ↑ | AS-TER ↓ | AS-chrF ↑ | valid SRT |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| whisperx alone | 15.34 | 2.60 | 1.36 | 87.78 | 7.00 | 95.67 | 5/5 |
-| gemini-3.7-flash direct | **12.55** | **2.46** | 1.33 | **90.54** | **5.75** | **96.77** | 5/5 |
-| gemini-3.5-flash-lite direct | 21.30 | 4.35 | 1.91 | 84.69 | 8.73 | 95.03 | 1/5 |
-| gemini-3.7-flash proofread (old pipeline) | 15.27 | 2.52 | 1.46 | 88.12 | 6.82 | 95.69 | 5/5 |
-| gemini-3.5-flash-lite proofread (old pipeline) | 15.34 | 2.54 | **1.32** | 87.92 | 6.94 | 95.78 | 5/5 |
-
-SubER per clip (lower is better):
-
-| clip | whisperx | 3.7-flash<br>direct | 3.5-flash-lite<br>direct | 3.7-flash<br>proofread | 3.5-flash-lite<br>proofread |
-|---|---:|---:|---:|---:|---:|
-| obama-2009-06-13 | 14.69 | 15.13 | 19.08 | 14.69 | 14.69 |
-| obama-2009-09-12 | 15.69 | 13.04 | 15.47 | 16.02 | 15.47 |
-| obama-2009-11-28 | 19.81 | 16.47 | 19.57 | 19.57 | 19.81 |
-| nasa-hubble-36th | 14.64 | 7.81 | 20.22 | 14.23 | 14.78 |
-| nasa-orion-10-days | 11.85 | 10.31 | **32.18** | 11.85 | 11.95 |
-| **macro-average** | **15.34** | **12.55** | **21.30** | **15.27** | **15.34** |
-| worst-to-best spread | 7.96 | 8.66 | 16.71 | 7.72 | 7.86 |
-
-**Gemini 3.7 Flash is best on its own.** It leads every metric and beats WhisperX
-on SubER by 18%, winning four of the five clips. Most of the gap is segmentation:
-the references carry 423 cues, Gemini produces 370 unaided, and WhisperX produces
-208 — cues roughly twice as long as a human would write. Because proofreading had
-to preserve WhisperX's timings, no amount of text editing could recover that,
-which is why the transcription stage is now Gemini's alone.
-
-**The old pipeline's real value was protecting a weak model.** Gemini 3.5 Flash
-Lite used directly averaged 21.30 and emitted syntactically invalid SRT on four
-of five clips, once collapsing an entire five-minute clip into a single subtitle.
-Routed through WhisperX it reached 15.34 with valid output every time, because
-the structure came from somewhere else.
-
-That protection is what the repair and validation stages now provide directly,
-without a second transcription engine: malformed output is repaired where it can
-be, the result is checked strictly, and the request is retried when it cannot.
-
-To reproduce:
-
-```shell
-uv run python evals/corpus.py         # download media by URL into a local cache
-uv run python evals/run_gemini_direct.py --model MODEL --variant NAME --api-key "$GEMINI_API_KEY"
-uv run python evals/normalize.py      # repair SRT syntax, identically per variant
-uv run python evals/verify_sync.py    # reject references that drift from the audio
-uv run python evals/score.py          # run sub-tools-eval per clip and aggregate
-```
-
-`normalize.py` applies syntax-only repairs (code fences, malformed timestamps,
-missing blank lines) to every variant so that an unparseable file is scored rather
-than silently dropped; it leaves well-formed files byte-identical, and reports
-which files it had to touch. `verify_sync.py` guards the corpus itself: one
-candidate clip was dropped because its Commons subtitle track was offset ~3.3s
-against the media, which penalized every variant equally and masked the
-differences being measured.
+For the reproducible evaluation harness and commands, see
+[evals/README.md](evals/README.md).
 
 ### Build Docker
 

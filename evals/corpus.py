@@ -23,9 +23,8 @@ UA = "sub-tools-eval/0.8 (https://github.com/dohyeondk/sub-tools)"
 
 # name -> Commons file title
 SAMPLES = {
-    # 2009-04-11 was tried first and dropped: its Commons subtitle track is
-    # offset ~3.3s against the media, which penalises every variant equally and
-    # swamps the differences being measured. verify_sync.py checks for this.
+    # 2009-04-11 was tried first and dropped because its Commons subtitle track
+    # was not synchronized with the media.
     "obama-2009-06-13": "2009-06-13 President Obama's Weekly Address.ogv",
     "obama-2009-09-12": "2009-09-12 President Obama's Weekly Address.ogv",
     "obama-2009-11-28": "2009-11-28 President Obama's Weekly Address.ogv",
