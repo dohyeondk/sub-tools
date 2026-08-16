@@ -36,7 +36,7 @@ Do not create a tag or GitHub release when code or build validation fails. If a 
      --title "vX.Y.Z" --generate-notes
    ```
 
-   Inspect the resulting release page/body and correct it with `gh release edit` if the generated notes omit important user-visible changes. Do not create a second release for an existing tag.
+   Inspect the resulting release page/body and correct it with `gh release edit` if the generated notes omit important user-visible changes. Changelist entries do not need manual author attribution. Do not create a second release for an existing tag.
 
 ## Verify delivery
 
