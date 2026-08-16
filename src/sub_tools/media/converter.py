@@ -53,6 +53,32 @@ def video_to_audio() -> None:
         )
 
 
+def audio_duration(path: str) -> float | None:
+    """
+    Return the length of the audio in seconds, or None if it cannot be measured.
+
+    Used to check that subtitles span the recording. A missing ffprobe is not
+    fatal; the checks that need a duration are skipped instead.
+    """
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        path,
+    ]
+
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        return float(result.stdout.strip())
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError):
+        warning("Could not measure audio duration; skipping coverage checks.")
+        return None
+
+
 def media_to_signature() -> None:
     """
     Generates a signature for the media file using the shazam CLI.

@@ -3,13 +3,14 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A toolkit for multilingual subtitles: WhisperX transcribes, and Gemini proofreads and translates. Gemini 3.7 Flash is the primary model.
+A toolkit for multilingual subtitles. Gemini transcribes the audio and translates the result; every answer is repaired and checked before it is accepted. Gemini 3.7 Flash is the primary model.
 
 ## ✨ Features
 
-- 🎯 High-quality transcription using WhisperX with word-level alignment
-- 🔍 AI-powered proofreading with Gemini to fix transcription errors
-- 🌍 Multilingual translation support
+- 🎯 Transcription with Gemini straight from audio to SRT
+- 🧰 Automatic repair of malformed model output, with a retry when repair cannot save it
+- ✅ Strict validation that refuses to ship a broken subtitle file
+- 🌍 Multilingual translation that preserves the source timings
 - 📥 Support for HLS streams, direct file URLs, and local files
 - 🎵 Audio fingerprinting using Shazam (macOS only)
 - 📊 Progress tracking with rich terminal output
@@ -40,7 +41,7 @@ environment:
 ```shell
 export GEMINI_API_KEY={your_api_key}
 
-# Full pipeline: download video, extract audio, transcribe, proofread, and translate
+# Full pipeline: download video, extract audio, transcribe, and translate
 sub-tools -i https://example.com/video.mp4 --languages en es fr
 
 # Using HLS stream URL
@@ -55,7 +56,7 @@ sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 # Specify custom tasks (available: video, audio, signature, transcribe, translate)
 sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
-# Specify a custom Gemini model for proofreading/translation
+# Specify a custom Gemini model for transcription and translation
 sub-tools -i https://example.com/video.mp4 --languages en --model gemini-3.6-flash
 
 # Specify output directory (default: output)
@@ -69,8 +70,8 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 1. **video**: Downloads media from URL (HLS or direct) → `video.mp4`
 2. **audio**: Extracts audio track → `audio.mp3`
 3. **signature**: Generates Shazam signature for fingerprinting (macOS only)
-4. **transcribe**: Transcription using WhisperX only → `transcript.srt`
-5. **translate**: Proofreads and translates the WhisperX transcript using Gemini → `{language}.srt`
+4. **transcribe**: Gemini turns the audio into subtitles → `{source-language}.srt`
+5. **translate**: Gemini translates those subtitles into each target language → `{language}.srt`
 
 By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
@@ -78,10 +79,6 @@ By default, all tasks run. You can customize which tasks to run with `--tasks`.
 
 The evaluator is deliberately separate from model execution: it scores generated SRT
 files against a human reference so multiple runs can be compared on identical input.
-WhisperX is the only transcription engine in this project. Gemini models are evaluated
-as a post-processing step over the same WhisperX transcript, with timestamps preserved;
-the comparison therefore measures proofreading differences between Gemini models rather
-than comparing different transcription engines.
 The primary score is the published [SubER method](https://aclanthology.org/2022.iwslt-1.1/),
 implemented by the pinned [`subtitle-edit-rate==0.4.0`](https://pypi.org/project/subtitle-edit-rate/)
 package. SubER is reference-based and accounts for subtitle text, segmentation, and
@@ -119,7 +116,6 @@ models or pipeline stages:
 ```shell
 sub-tools-eval \
   --reference reference/en.srt \
-  --hypothesis whisperx=output/transcript.srt \
   --hypothesis gemini-3.7-flash=output/gemini-3.7-flash/en.srt \
   --hypothesis gemini-3.6-flash=output/gemini-3.6-flash/en.srt \
   --output evals/transcription.json \
@@ -131,43 +127,43 @@ required. Private or copyrighted recordings are intentionally not bundled in the
 package.
 
 `sub-tools-eval` measures the text, segmentation, and timing quality of the assembled
-SRT output, while `sub-tools` remains responsible for producing the SRT. In particular,
-Gemini proofreading is evaluated with the timestamps WhisperX produced.
+SRT output, while `sub-tools` remains responsible for producing the SRT.
 
-To compare models, generate one WhisperX transcript and pass each Gemini output as a
-`--hypothesis`. The Markdown report shows one row per variant; lower error rates and
-higher BLEU/chrF indicate a closer match to the reference.
+To compare models or settings, pass each generated file as a `--hypothesis`. The
+Markdown report shows one row per variant; lower error rates and higher BLEU/chrF
+indicate a closer match to the reference.
 
 ### Results
+
+These are the measurements that produced the current design. They were taken
+when the pipeline still ran WhisperX and used Gemini only to proofread, and they
+are the reason it no longer does.
 
 Measured on 23.3 minutes of public-domain speech: three White House weekly
 addresses (single speaker, prepared remarks) and two NASA videos (narration and a
 multi-speaker interview). Each clip comes from Wikimedia Commons with a
 human-authored English subtitle track as the reference. No media is checked in —
 `evals/manifest.json` records each clip's download URL and `evals/corpus.py`
-fetches it on demand. The harness is in [`evals/`](evals/); run artifacts are not
-committed, so the numbers below are the record of the run.
+fetches it on demand.
 
-"Without sub-tools" means the model was handed the audio and asked for a subtitle
-file, so it did both transcription and segmentation. "With sub-tools" is the
-shipped pipeline: WhisperX transcribes, and the model proofreads that transcript.
-Both Gemini configurations use identical generation settings, so the comparison
-isolates the pipeline rather than the sampling knobs.
+"Direct" means the model was handed the audio and asked for a subtitle file, so
+it did both transcription and segmentation. "Proofread" was the previous
+architecture: WhisperX transcribed, and the model edited the text without moving
+the timings. Both use identical generation settings.
 
 Macro-averaged over the five clips:
 
 | variant | SubER ↓ | AS-WER ↓ | AS-CER ↓ | AS-BLEU ↑ | AS-TER ↓ | AS-chrF ↑ | valid SRT |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| whisperx | 15.34 | 2.60 | 1.36 | 87.78 | 7.00 | 95.67 | 5/5 |
-| gemini-3.7-flash (without sub-tools) | **12.55** | **2.46** | 1.33 | **90.54** | **5.75** | **96.77** | 5/5 |
-| gemini-3.5-flash-lite (without sub-tools) | 21.30 | 4.35 | 1.91 | 84.69 | 8.73 | 95.03 | 1/5 |
-| gemini-3.7-flash (with sub-tools) | 15.27 | 2.52 | 1.46 | 88.12 | 6.82 | 95.69 | 5/5 |
-| gemini-3.5-flash-lite (with sub-tools) | 15.34 | 2.54 | **1.32** | 87.92 | 6.94 | 95.78 | 5/5 |
+| whisperx alone | 15.34 | 2.60 | 1.36 | 87.78 | 7.00 | 95.67 | 5/5 |
+| gemini-3.7-flash direct | **12.55** | **2.46** | 1.33 | **90.54** | **5.75** | **96.77** | 5/5 |
+| gemini-3.5-flash-lite direct | 21.30 | 4.35 | 1.91 | 84.69 | 8.73 | 95.03 | 1/5 |
+| gemini-3.7-flash proofread (old pipeline) | 15.27 | 2.52 | 1.46 | 88.12 | 6.82 | 95.69 | 5/5 |
+| gemini-3.5-flash-lite proofread (old pipeline) | 15.34 | 2.54 | **1.32** | 87.92 | 6.94 | 95.78 | 5/5 |
 
-SubER per clip (lower is better), showing how each variant holds up across
-content types:
+SubER per clip (lower is better):
 
-| clip | whisperx | 3.7-flash<br>direct | 3.5-flash-lite<br>direct | 3.7-flash<br>sub-tools | 3.5-flash-lite<br>sub-tools |
+| clip | whisperx | 3.7-flash<br>direct | 3.5-flash-lite<br>direct | 3.7-flash<br>proofread | 3.5-flash-lite<br>proofread |
 |---|---:|---:|---:|---:|---:|
 | obama-2009-06-13 | 14.69 | 15.13 | 19.08 | 14.69 | 14.69 |
 | obama-2009-09-12 | 15.69 | 13.04 | 15.47 | 16.02 | 15.47 |
@@ -177,42 +173,28 @@ content types:
 | **macro-average** | **15.34** | **12.55** | **21.30** | **15.27** | **15.34** |
 | worst-to-best spread | 7.96 | 8.66 | 16.71 | 7.72 | 7.86 |
 
-**The pipeline makes a cheap model behave like an expensive one.** Gemini 3.5
-Flash Lite on its own averages SubER 21.30, the worst of the five variants, and it
-is erratic: it ranks worst on three of the five clips and blows up on the
-multi-speaker NASA interview at 32.18, more than double its own best clip. Run
-through sub-tools, the same model scores 15.34 — a 28% improvement that lands
-level with Gemini 3.7 Flash run the same way (15.27) — and its per-clip spread
-collapses from 16.71 to 7.86. Sub-tools buys roughly a model tier, and buys
-consistency outright.
+**Gemini 3.7 Flash is best on its own.** It leads every metric and beats WhisperX
+on SubER by 18%, winning four of the five clips. Most of the gap is segmentation:
+the references carry 423 cues, Gemini produces 370 unaided, and WhisperX produces
+208 — cues roughly twice as long as a human would write. Because proofreading had
+to preserve WhisperX's timings, no amount of text editing could recover that,
+which is why the transcription stage is now Gemini's alone.
 
-**It also makes output structurally reliable.** Used directly, Flash Lite emitted
-syntactically invalid SRT on four of five clips — dropping the hours field from
-timestamps, or omitting the blank lines between cues — and once collapsed an
-entire five-minute clip into a single subtitle. Through sub-tools it produced
-valid SRT every time, because WhisperX supplies the timing and structure and the
-model only edits text. That structural guarantee is the pipeline's most practical
-property: proofreading cannot invent a broken timeline.
+**The old pipeline's real value was protecting a weak model.** Gemini 3.5 Flash
+Lite used directly averaged 21.30 and emitted syntactically invalid SRT on four
+of five clips, once collapsing an entire five-minute clip into a single subtitle.
+Routed through WhisperX it reached 15.34 with valid output every time, because
+the structure came from somewhere else.
 
-**Proofreading improves the words.** Both models beat raw WhisperX on AS-WER
-(2.52 and 2.54 vs 2.60), so the Gemini pass is doing real correction work on top
-of the transcript it is given.
-
-**Where the pipeline costs you: segmentation.** For the strongest model, direct
-use scores better on SubER (12.55 vs 15.27). Proofreading must preserve the input
-timestamps, so the sub-tools variants inherit WhisperX's cue boundaries: the
-references carry 423 cues, Gemini 3.7 Flash produces 370 on its own, and WhisperX
-produces 208. WhisperX cues run about twice as long as human subtitle cues, and
-SubER — which scores timing and segmentation, not just words — charges for that.
-If you want the pipeline's reliability *and* human-like cue density, the
-segmentation stage is where to spend the effort, not the proofreading prompt.
+That protection is what the repair and validation stages now provide directly,
+without a second transcription engine: malformed output is repaired where it can
+be, the result is checked strictly, and the request is retried when it cannot.
 
 To reproduce:
 
 ```shell
 uv run python evals/corpus.py         # download media by URL into a local cache
 uv run python evals/run_gemini_direct.py --model MODEL --variant NAME --api-key "$GEMINI_API_KEY"
-uv run python evals/run_subtools.py --model MODEL --variant NAME
 uv run python evals/normalize.py      # repair SRT syntax, identically per variant
 uv run python evals/verify_sync.py    # reject references that drift from the audio
 uv run python evals/score.py          # run sub-tools-eval per clip and aggregate
