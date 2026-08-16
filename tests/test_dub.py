@@ -272,3 +272,4 @@ def test_dub_remains_opt_in():
 
     assert "dub" not in defaults.tasks
     assert defaults.gemini_tts_model == "gemini-2.5-flash-preview-tts"
+    assert defaults.dub_chunk_duration == 300.0

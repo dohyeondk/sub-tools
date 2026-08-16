@@ -44,7 +44,7 @@ class Config:
     gemini_tts_voice: str = "Sadaltager"
 
     # Dub synchronization
-    dub_chunk_duration: float = 60.0
+    dub_chunk_duration: float = 300.0
     dub_gap_threshold: float = 2.0
 
     # Validation

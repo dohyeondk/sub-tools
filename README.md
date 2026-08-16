@@ -83,9 +83,10 @@ default. It uses `gemini-2.5-flash-preview-tts` and the `Sadaltager` voice unles
 `--tts-model` or `--tts-voice`.
 
 Gemini 3.7 Flash supports audio input but not audio output, so `dub` sends the
-translated SRT text to the dedicated TTS model. It fits gap-aware audio chunks to
-the subtitle timeline and writes a WAV matching the original duration. This does
-not preserve or mix the original speakers, music, or audience reactions.
+translated SRT text to the dedicated TTS model. It fits gap-aware audio chunks
+(up to 300 seconds by default) to the subtitle timeline and writes a WAV matching
+the original duration. This does not preserve or mix the original speakers, music,
+or audience reactions.
 
 ## 📏 Transcription evaluation
 
