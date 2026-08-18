@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      # One-time bootstrap for the existing PR; remove after the first image
+      # set has been published to GHCR.
+      - dk/harare-v1
     paths:
       - Dockerfile.ci
       - .github/workflows/publish-ci-images.yml
