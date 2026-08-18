@@ -30,7 +30,13 @@ DEFAULT_TTS_MODEL = "gpt-4o-mini-tts"
 DEFAULT_TTS_VOICE = "alloy"
 
 # Model families that accept audio input in chat; everything else is text-only.
-AUDIO_MODEL_PREFIXES = ("gpt-audio", "gpt-4o-audio", "gpt-realtime")
+AUDIO_MODEL_PREFIXES = (
+    "gpt-audio",
+    "gpt-4o-audio",
+    "gpt-4o-mini-audio",
+    "gpt-realtime",
+    "gpt-4o-mini-realtime",
+)
 
 # Model families served by the dedicated transcription endpoint, which returns
 # SRT directly. Chat audio models (gpt-audio-*) can follow instructions but
@@ -61,6 +67,11 @@ def accepts_audio() -> bool:
     return config.model.lower().startswith(AUDIO_MODEL_PREFIXES)
 
 
+def can_transcribe_audio() -> bool:
+    """OpenAI has either chat-audio or dedicated transcription routes."""
+    return True
+
+
 def uses_transcription_api(model: str) -> bool:
     """
     Whether a model is served by the dedicated transcription endpoint.
@@ -73,6 +84,8 @@ def generation_model(with_audio: bool) -> str:
     The model a request should go to: audio requests from a text-only model
     are routed to the audio model.
     """
+    if with_audio and uses_transcription_api(config.model):
+        return config.model
     if with_audio and not accepts_audio():
         return config.audio_model or DEFAULT_AUDIO_MODEL
     return config.model
@@ -171,7 +184,7 @@ async def generate(
 
     kwargs = {"modalities": ["text"]} if with_audio else {}
 
-    async with AsyncOpenAI(api_key=config.openai_api_key) as client:
+    async with AsyncOpenAI(api_key=config.api_key) as client:
         for attempt in range(config.retry):
             try:
                 response = await client.chat.completions.create(
@@ -209,7 +222,7 @@ async def _transcribe_via_api(model: str) -> Optional[str]:
 
     send_path, _ = _send_file()
 
-    async with AsyncOpenAI(api_key=config.openai_api_key) as client:
+    async with AsyncOpenAI(api_key=config.api_key) as client:
         for attempt in range(config.retry):
             try:
                 with open(send_path, "rb") as f:
@@ -243,7 +256,7 @@ async def speak(text: str, language: str) -> bytes:
     """
     model = config.tts_model or DEFAULT_TTS_MODEL
 
-    async with AsyncOpenAI(api_key=config.openai_api_key) as client:
+    async with AsyncOpenAI(api_key=config.api_key) as client:
         response = await client.audio.speech.create(
             model=model,
             voice=config.tts_voice or DEFAULT_TTS_VOICE,

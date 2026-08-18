@@ -37,13 +37,18 @@ def accepts_audio() -> bool:
     return True
 
 
+def can_transcribe_audio() -> bool:
+    """Gemini generation models accept audio input natively."""
+    return True
+
+
 def prepare_audio() -> types.File:
     """
     Upload the configured audio file once and reuse it across requests.
     """
     path = config.audio_file
     if path not in _uploaded_files:
-        client = genai.Client(api_key=config.gemini_api_key)
+        client = genai.Client(api_key=config.api_key)
         _uploaded_files[path] = client.files.upload(file=path)
     return _uploaded_files[path]
 
@@ -56,7 +61,7 @@ async def generate(
     """
     Ask Gemini once for subtitles, retrying only transient server-side failures.
     """
-    client = genai.Client(api_key=config.gemini_api_key)
+    client = genai.Client(api_key=config.api_key)
 
     parts = [prepare_audio()] if with_audio else []
     if text:
@@ -103,7 +108,7 @@ async def speak(text: str, language: str) -> bytes:
     """
     Turn one piece of text into speech, returned as WAV bytes.
     """
-    client = genai.Client(api_key=config.gemini_api_key)
+    client = genai.Client(api_key=config.api_key)
 
     voice = config.tts_voice or DEFAULT_TTS_VOICE
     response = await client.aio.models.generate_content(

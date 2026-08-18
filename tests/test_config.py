@@ -15,6 +15,14 @@ class TestProviderInference:
     def test_case_is_ignored(self):
         assert Config(model="GPT-5.6-Luna").provider == "openai"
 
+    def test_anthropic_models_are_inferred(self):
+        assert Config(model="claude-sonnet-4").provider == "anthropic"
+
+    def test_explicit_provider_overrides_model_inference(self):
+        config = Config(provider="openrouter", model="claude-sonnet-4")
+        assert config.provider == "openrouter"
+        assert config.resolved_provider == "openrouter"
+
 
 class TestOpenAIAudioRouting:
     def test_text_models_route_audio_requests_to_the_audio_model(self, monkeypatch):
@@ -37,6 +45,10 @@ class TestOpenAIAudioRouting:
         assert provider.accepts_audio() is True
         assert provider.generation_model(with_audio=True) == "gpt-audio-1.5"
 
+        monkeypatch.setattr(config, "model", "gpt-4o-mini-audio-preview")
+        assert provider.accepts_audio() is True
+        assert provider.generation_model(with_audio=True) == "gpt-4o-mini-audio-preview"
+
     def test_audio_model_override_is_respected(self, monkeypatch):
         from sub_tools.config import config
         from sub_tools.intelligence import openai as provider
@@ -54,3 +66,17 @@ class TestApiKeySelection:
     def test_openai_key_is_used_for_openai_models(self):
         config = Config(model="gpt-5.6-luna", gemini_api_key="g", openai_api_key="o")
         assert config.api_key == "o"
+
+    def test_explicit_provider_selects_its_key(self):
+        config = Config(
+            provider="anthropic",
+            model="openai/gpt-5.6-luna",
+            gemini_api_key="g",
+            openai_api_key="o",
+            anthropic_api_key="a",
+            openrouter_api_key="r",
+        )
+        assert config.api_key == "a"
+
+        config.set_provider("openrouter")
+        assert config.api_key == "r"
