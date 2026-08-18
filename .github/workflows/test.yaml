@@ -5,10 +5,24 @@ on:
     branches:
       - "**"
 
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   test:
     name: Test with Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: ghcr.io/${{ github.repository }}-ci:python${{ matrix.python-version }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
         python-version:
@@ -20,19 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.5.14"
-          python-version: ${{ matrix.python-version }}
-
-      - name: Setup FFmpeg
-        run: |
-          sudo apt update
-          sudo apt install -y ffmpeg
-
       - name: Install the project
-        run: uv sync --all-extras --dev
+        run: uv sync --frozen --all-extras --dev
 
       - name: Run tests
         run: uv run pytest -m "not slow"

@@ -2,8 +2,8 @@
 Provider-agnostic transcription and translation.
 
 The prompts, the repair/validate loop, and the retry policy live here; the
-provider modules (gemini, openai) only know how to answer one request.
-Which provider is used follows from the model name in config.
+provider modules only know how to answer one request. The provider is selected
+explicitly in config, with model-name inference retained for compatibility.
 """
 
 import asyncio
@@ -24,16 +24,28 @@ from ..subtitles.validator import SubtitleValidationError, find_problems
 
 def get_provider() -> ModuleType:
     """
-    Return the provider module implied by the configured model name.
+    Return the configured provider module.
     """
-    if config.provider == "openai":
+    provider_name = config.resolved_provider
+
+    if provider_name == "openai":
         from . import openai
 
         return openai
+    if provider_name == "openrouter":
+        from . import openrouter
 
-    from . import gemini
+        return openrouter
+    if provider_name == "anthropic":
+        from . import anthropic
 
-    return gemini
+        return anthropic
+    if provider_name in ("google", "gemini"):
+        from . import gemini
+
+        return gemini
+
+    raise ValueError(f"Unsupported provider: {provider_name}")
 
 
 def transcribe() -> None:
@@ -47,6 +59,14 @@ def transcribe() -> None:
 
 
 async def _transcribe() -> None:
+    provider = get_provider()
+    if not getattr(provider, "can_transcribe_audio", lambda: True)():
+        raise RuntimeError(
+            "The Anthropic API does not accept audio input. Use an audio-capable "
+            "provider/model for transcribe, or run Anthropic for translate with an "
+            "existing source SRT."
+        )
+
     info(f"Transcribing with {config.model}...")
 
     language_code = config.source_language
@@ -74,7 +94,7 @@ async def _transcribe() -> None:
     Reply with the SRT text now.
     """
 
-    get_provider().prepare_audio()
+    provider.prepare_audio()
     await _generate_subtitles(
         output_file=f"{language_code}.srt",
         system_instruction=system_instruction,

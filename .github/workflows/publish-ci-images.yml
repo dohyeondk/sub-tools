@@ -1,0 +1,66 @@
+name: Publish CI images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile.ci
+      - .github/workflows/publish-ci-images.yml
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-ci-images
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/${{ github.repository }}-ci
+
+jobs:
+  publish:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push CI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ci
+          build-args: |
+            PYTHON_VERSION=${{ matrix.python-version }}
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:python${{ matrix.python-version }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=ci-python-${{ matrix.python-version }}
+          cache-to: type=gha,mode=max,scope=ci-python-${{ matrix.python-version }}

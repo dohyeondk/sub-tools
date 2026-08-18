@@ -3,11 +3,11 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A toolkit for multilingual subtitles. A model transcribes the audio and translates the result; every answer is repaired and checked before it is accepted. Gemini 3.7 Flash is the primary model; OpenAI models such as GPT-5.6 Luna are supported as a lower-cost alternative.
+A toolkit for multilingual subtitles. A selected model transcribes the audio and translates the result; every answer is repaired and checked before it is accepted. Google Gemini is the default, with direct Anthropic and OpenAI APIs plus OpenRouter's model catalog available from the same pipeline.
 
 ## ✨ Features
 
-- 🎯 Transcription straight from audio to SRT, with Gemini or an OpenAI model
+- 🎯 Transcription straight from audio to SRT, with Google, OpenAI, or OpenRouter audio models
 - 🧰 Automatic repair of malformed model output, with a retry when repair cannot save it
 - ✅ Strict validation that refuses to ship a broken subtitle file
 - 🌍 Multilingual translation that preserves the source timings
@@ -65,7 +65,17 @@ sub-tools -i https://example.com/video.mp4 --languages en --model gemini-3.6-fla
 
 # Use an OpenAI model instead of Gemini (reads OPENAI_API_KEY)
 export OPENAI_API_KEY={your_api_key}
-sub-tools -i https://example.com/video.mp4 --languages en es --model gpt-5.6-luna
+sub-tools -i https://example.com/video.mp4 --languages en es --provider openai --model gpt-5.6-luna
+
+# Use an Anthropic model for text-only translation
+export ANTHROPIC_API_KEY={your_api_key}
+sub-tools --tasks translate --audio-file audio.mp3 --languages es --provider anthropic --model claude-sonnet-4-20250514
+
+# Use any OpenRouter model, including a separate audio model for transcription
+export OPENROUTER_API_KEY={your_api_key}
+sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages es \
+  --provider openrouter --model anthropic/claude-sonnet-4 \
+  --audio-model google/gemini-2.5-flash
 
 # Dub: speak the translated subtitles into es.mp3 and fr.mp3
 sub-tools --tasks transcribe translate dub --audio-file audio.mp3 --languages es fr
@@ -76,18 +86,37 @@ sub-tools -i https://example.com/video.mp4 --languages en --output my-subtitles
 
 ### Choosing a provider
 
-The provider follows from the model name: `gpt-*` models call the OpenAI API with
-`OPENAI_API_KEY` (or `--openai-api-key`), everything else calls the Gemini API with
-`GEMINI_API_KEY` (or `--gemini-api-key`). The same repair and validation loop runs
-either way.
+Use `--provider` to choose `google`, `anthropic`, `openai`, or `openrouter`, and
+`--model` to choose the model identifier. If `--provider` is omitted, the tool
+infers OpenAI from `gpt-*` names, Anthropic from `claude-*` names, and Google
+otherwise. Set the key for
+the selected direct provider with its matching option or environment variable:
 
-OpenAI text models such as `gpt-5.6-luna` cannot hear audio, so transcription is
-routed to an audio-capable model (`whisper-1` on the transcription API by default;
-override with `--audio-model`, which also accepts `gpt-audio-*` chat models) while
-the selected model handles translation text-only. Audio
-sent to OpenAI is inlined into the request; files over 15 MB are automatically
-re-encoded to mono 32 kbit/s MP3, which fits roughly an hour of speech under the
-20 MB request cap.
+| Provider | CLI option | Environment variable |
+| --- | --- | --- |
+| Google/Gemini | `--gemini-api-key` | `GEMINI_API_KEY` |
+| OpenAI | `--openai-api-key` | `OPENAI_API_KEY` |
+| Anthropic | `--anthropic-api-key` | `ANTHROPIC_API_KEY` |
+| OpenRouter | `--openrouter-api-key` | `OPENROUTER_API_KEY` |
+
+OpenRouter uses one OpenRouter key for all routed models. If you enable
+OpenRouter's [BYOK](https://openrouter.ai/docs/guides/overview/multimodal/stt#byok-bring-your-own-key),
+configure upstream provider keys in OpenRouter; they are not copied into this
+tool or sent as per-request credentials.
+
+The same repair and validation loop runs for every provider.
+
+Text-only models can use `--audio-model` for transcription while the selected
+model handles translation text-only. OpenAI defaults to `whisper-1`; OpenRouter
+defaults to an audio-capable Gemini model and also supports dedicated STT models
+such as `openai/whisper-large-v3` when they return segment timestamps. Browse
+[OpenRouter's model catalog](https://openrouter.ai/models) for current audio and
+transcription models.
+
+Native Anthropic models are text-only: use them for translation when a source SRT
+already exists, or select the same Claude model through OpenRouter when audio
+input is required. OpenRouter's [official Python SDK](https://openrouter.ai/docs/client-sdks/python/overview)
+handles chat, STT, TTS, and its retry/routing behavior.
 
 ### Pipeline Tasks
 
@@ -104,9 +133,10 @@ By default, all tasks except `dub` run. You can customize which tasks to run wit
 
 ### Dubbing
 
-Each subtitle cue is spoken by the provider's text-to-speech model (OpenAI:
-`gpt-4o-mini-tts`, Gemini: `gemini-2.5-flash-preview-tts`; override with
-`--tts-model` and `--tts-voice`) and placed at the cue's start time over silence,
+Each subtitle cue is spoken by the selected provider's text-to-speech model (OpenAI:
+`gpt-4o-mini-tts`, Gemini: `gemini-2.5-flash-preview-tts`, OpenRouter: a routed
+speech model; native Anthropic has no TTS; override with `--tts-model` and
+`--tts-voice`) and placed at the cue's start time over silence,
 producing an MP3 the same length as the original recording. Speech that runs longer
 than the original speaker took is sped up (at most 2×) rather than talking over the
 next cue, and `[sound effects]` are not spoken. The dub uses the same provider as

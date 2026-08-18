@@ -2,7 +2,7 @@ import argparse
 from argparse import ArgumentParser, Namespace
 from importlib.metadata import version
 
-from ..config import apply_namespace, config
+from ..config import SUPPORTED_PROVIDERS, apply_namespace, config
 from .env_default import EnvDefault
 
 
@@ -95,10 +95,12 @@ def build_parser() -> ArgumentParser:
 
     parser.add_argument(
         "--gemini-api-key",
+        "--google-api-key",
+        dest="gemini_api_key",
         action=EnvDefault,
         env_name="GEMINI_API_KEY",
         required=False,
-        help="Gemini API Key. If not provided, the script tries to use the GEMINI_API_KEY environment variable.",
+        help="Google/Gemini API key. Falls back to the GEMINI_API_KEY environment variable.",
     )
 
     parser.add_argument(
@@ -106,7 +108,33 @@ def build_parser() -> ArgumentParser:
         action=EnvDefault,
         env_name="OPENAI_API_KEY",
         required=False,
-        help="OpenAI API Key, used when an OpenAI model is selected. If not provided, the script tries to use the OPENAI_API_KEY environment variable.",
+        help="OpenAI API key. Falls back to the OPENAI_API_KEY environment variable.",
+    )
+
+    parser.add_argument(
+        "--anthropic-api-key",
+        action=EnvDefault,
+        env_name="ANTHROPIC_API_KEY",
+        required=False,
+        help="Anthropic API key. Falls back to the ANTHROPIC_API_KEY environment variable.",
+    )
+
+    parser.add_argument(
+        "--openrouter-api-key",
+        action=EnvDefault,
+        env_name="OPENROUTER_API_KEY",
+        required=False,
+        help="OpenRouter API key. Falls back to the OPENROUTER_API_KEY environment variable.",
+    )
+
+    parser.add_argument(
+        "--provider",
+        choices=SUPPORTED_PROVIDERS,
+        default=None,
+        help=(
+            "Model provider (default: inferred from the model). Choose google, anthropic, "
+            "openai, or openrouter; gemini is kept as a compatibility alias for google."
+        ),
     )
 
     parser.add_argument(
@@ -116,7 +144,8 @@ def build_parser() -> ArgumentParser:
         default=config.model,
         help=(
             "Model for transcription and translation (default: %(default)s). "
-            "Gemini models use the Gemini API; OpenAI models such as gpt-5.6-luna use the OpenAI API."
+            "Use the model identifier from the selected provider, including an OpenRouter "
+            "model slug such as google/gemini-2.5-flash."
         ),
     )
 
@@ -124,10 +153,9 @@ def build_parser() -> ArgumentParser:
         "--audio-model",
         default=config.audio_model,
         help=(
-            "Model that listens to the audio when the main model cannot. OpenAI text models "
-            "such as gpt-5.6-luna transcribe through this model (default: whisper-1 via the "
-            "transcription API; gpt-audio-* models are also accepted); Gemini models hear "
-            "audio natively and ignore it."
+            "Audio-capable model used for transcription when the main model cannot hear audio. "
+            "The identifier is interpreted by the selected provider (for example, "
+            "whisper-1 for OpenAI or google/gemini-2.5-flash for OpenRouter)."
         ),
     )
 
