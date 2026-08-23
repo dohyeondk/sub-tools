@@ -39,6 +39,7 @@ async def generate(
     system_instruction: str,
     text: str | None = None,
     with_audio: bool = True,
+    thinking_level: str | None = None,
 ) -> str | None:
     """Ask Claude for one text-only subtitle response."""
     if with_audio:

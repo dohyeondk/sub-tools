@@ -150,6 +150,26 @@ def build_parser() -> ArgumentParser:
     )
 
     parser.add_argument(
+        "--transcription-thinking-level",
+        choices=("low", "high"),
+        default=config.transcription_thinking_level,
+        help=(
+            "Gemini thinking level for audio transcription (default: %(default)s). "
+            "HIGH favors segmentation and timing quality; LOW reduces cost."
+        ),
+    )
+
+    parser.add_argument(
+        "--translation-thinking-level",
+        choices=("low", "high"),
+        default=config.translation_thinking_level,
+        help=(
+            "Gemini thinking level for subtitle translation (default: %(default)s). "
+            "LOW is usually sufficient and cheaper."
+        ),
+    )
+
+    parser.add_argument(
         "--audio-model",
         default=config.audio_model,
         help=(

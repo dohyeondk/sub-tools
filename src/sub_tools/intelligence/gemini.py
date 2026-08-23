@@ -57,9 +57,13 @@ async def generate(
     system_instruction: str,
     text: Optional[str] = None,
     with_audio: bool = True,
+    thinking_level: str | None = None,
 ) -> Optional[str]:
     """
     Ask Gemini once for subtitles, retrying only transient server-side failures.
+
+    ``thinking_level`` is selected by the pipeline per task: transcription
+    defaults to HIGH for timing quality, while translation defaults to LOW.
     """
     client = genai.Client(api_key=config.api_key)
 
@@ -80,7 +84,7 @@ async def generate(
                     system_instruction=system_instruction,
                     thinking_config=types.ThinkingConfig(
                         include_thoughts=True,
-                        thinking_level=types.ThinkingLevel.HIGH,
+                        thinking_level=_thinking_level(thinking_level or "high"),
                     ),
                     tools=tools,
                 ),
@@ -102,6 +106,20 @@ async def generate(
             raise e
 
     return None
+
+
+def _thinking_level(value: str) -> types.ThinkingLevel:
+    """
+    Convert the CLI/config value to the installed SDK enum.
+
+    google-genai 1.52 exposes LOW and HIGH for the Gemini models used here.
+    Keep this conversion at the provider boundary so the rest of the pipeline
+    remains provider-agnostic.
+    """
+    try:
+        return types.ThinkingLevel[value.upper()]
+    except KeyError as error:
+        raise ValueError(f"Unsupported Gemini thinking level: {value!r}") from error
 
 
 async def speak(text: str, language: str) -> bytes:

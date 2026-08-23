@@ -92,9 +92,10 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 - `get_provider()` picks the explicitly selected provider module (`config.provider`), with model-name inference retained for compatibility
 
 **intelligence/gemini.py**, **intelligence/openai.py**, **intelligence/anthropic.py**, and **intelligence/openrouter.py**: Provider modules
-- Each exposes the same surface: `accepts_audio()`, `prepare_audio()`, `generate(system_instruction, text, with_audio)`, and `speak(text, language)` returning audio bytes when TTS is available
+- Each exposes the same surface: `accepts_audio()`, `prepare_audio()`, `generate(system_instruction, text, with_audio, thinking_level)`, and `speak(text, language)` returning audio bytes when TTS is available
 - Prompting and validation live in pipeline.py; the providers only talk to their API and retry transient failures
 - Provider selection is explicit via `--provider google|anthropic|openai|openrouter`; omitted selection infers OpenAI from `gpt-*`, Anthropic from `claude-*`, and Gemini otherwise. Each direct provider uses its matching key field; OpenRouter uses only `OPENROUTER_API_KEY` and its dashboard-managed BYOK configuration
+- Gemini uses high thinking for transcription and low thinking for translation by default; the levels can be overridden with `--transcription-thinking-level` and `--translation-thinking-level`
 - OpenAI text models (gpt-5.6-*) cannot hear audio: transcription is routed to `whisper-1` on the transcription API, which answers in SRT (override with `--audio-model`; `gpt-audio-*` chat models are also accepted), while the selected model translates text-only; Gemini models hear audio natively
 - OpenAI audio is inlined as base64; files over 15 MB are re-encoded to mono 32 kbit/s MP3 first, which fits about an hour of speech under the 20 MB request cap. Gemini uploads the file once and caches the handle
 - OpenRouter uses the official Python SDK for async chat, segment-timestamped STT, and TTS; native Anthropic is text-only, so audio work should use an audio-capable provider/model

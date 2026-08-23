@@ -2,7 +2,9 @@
 Provider selection follows from the model name alone.
 """
 
+from sub_tools.arguments.parser import build_parser
 from sub_tools.config import Config
+from sub_tools.intelligence.gemini import _thinking_level
 
 
 class TestProviderInference:
@@ -14,6 +16,29 @@ class TestProviderInference:
 
     def test_case_is_ignored(self):
         assert Config(model="GPT-5.6-Luna").provider == "openai"
+
+    def test_thinking_defaults_keep_transcription_quality_and_reduce_translation_cost(self):
+        config = Config()
+        assert config.transcription_thinking_level == "high"
+        assert config.translation_thinking_level == "low"
+
+    def test_thinking_levels_are_forwarded_from_cli(self):
+        args = build_parser().parse_args(
+            [
+                "--transcription-thinking-level",
+                "low",
+                "--translation-thinking-level",
+                "high",
+            ]
+        )
+        assert args.transcription_thinking_level == "low"
+        assert args.translation_thinking_level == "high"
+
+    def test_gemini_thinking_levels_use_sdk_values(self):
+        from google.genai import types
+
+        assert _thinking_level("low") is types.ThinkingLevel.LOW
+        assert _thinking_level("HIGH") is types.ThinkingLevel.HIGH
 
     def test_anthropic_models_are_inferred(self):
         assert Config(model="claude-sonnet-4").provider == "anthropic"

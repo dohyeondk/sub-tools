@@ -97,6 +97,7 @@ async def generate(
     system_instruction: str,
     text: str | None = None,
     with_audio: bool = True,
+    thinking_level: str | None = None,
 ) -> str | None:
     """Ask one OpenRouter model for subtitles using the SDK retry policy."""
     model = generation_model(with_audio)

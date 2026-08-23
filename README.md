@@ -118,6 +118,23 @@ already exists, or select the same Claude model through OpenRouter when audio
 input is required. OpenRouter's [official Python SDK](https://openrouter.ai/docs/client-sdks/python/overview)
 handles chat, STT, TTS, and its retry/routing behavior.
 
+Gemini uses `high` thinking for transcription by default because reasoning helps
+with audio segmentation and timestamp placement. Translation defaults to `low`
+thinking because it receives an existing subtitle structure and the repair and
+validation stages protect that structure. Override either setting when needed:
+
+```shell
+sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages es \
+  --transcription-thinking-level high --translation-thinking-level low
+```
+
+OpenAI text models such as `gpt-5.6-luna` cannot hear audio, so transcription is
+routed to an audio-capable model (`whisper-1` on the transcription API by default;
+override with `--audio-model`, which also accepts `gpt-audio-*` chat models) while
+the selected model handles translation text-only. Audio sent to OpenAI is inlined
+into the request; files over 15 MB are automatically re-encoded to mono 32 kbit/s
+MP3, which fits roughly an hour of speech under the 20 MB request cap.
+
 ### Pipeline Tasks
 
 The tool operates as a multi-stage pipeline controlled by the `--tasks` parameter:
