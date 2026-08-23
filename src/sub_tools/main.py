@@ -17,8 +17,15 @@ def main():
     def require_api_key() -> None:
         if not (config.api_key and config.api_key.strip()):
             parsed.func()
-            name = "OpenAI" if config.provider == "openai" else "Gemini"
-            raise Exception(f"No {name} API Key provided")
+            names = {
+                "google": "Google/Gemini",
+                "gemini": "Google/Gemini",
+                "openai": "OpenAI",
+                "anthropic": "Anthropic",
+                "openrouter": "OpenRouter",
+            }
+            name = names[config.resolved_provider]
+            raise Exception(f"No {name} API key provided")
 
     try:
         ensure_output_directory(config.output_directory)

@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:1
+
+ARG PYTHON_VERSION=3.13
+FROM ghcr.io/astral-sh/uv:python${PYTHON_VERSION}-bookworm-slim
+
+# The test container supplies the system tools that the repository's media
+# integration tests need. The project and its Python dependencies are still
+# installed by the test workflow from the checked-out revision.
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes \
+        ca-certificates \
+        ffmpeg \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# The uv base image has uv as its entrypoint. GitHub Actions needs to run the
+# workflow commands directly inside the container instead.
+ENTRYPOINT []
