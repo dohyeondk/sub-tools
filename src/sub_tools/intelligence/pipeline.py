@@ -79,6 +79,7 @@ async def _transcribe() -> None:
         output_file=f"{language_code}.srt",
         system_instruction=system_instruction,
         text=f"Transcribe this {language} audio into an SRT subtitle file.",
+        thinking_level=config.transcription_thinking_level,
     )
 
 
@@ -189,6 +190,7 @@ async def _translate_language(
         text=f"{source_language} SRT to translate:\n\n{srt_content}",
         reference=srt_content,
         with_audio=with_audio,
+        thinking_level=config.translation_thinking_level,
     )
     completion()
 
@@ -199,6 +201,7 @@ async def _generate_subtitles(
     text: Optional[str] = None,
     reference: Optional[str] = None,
     with_audio: bool = True,
+    thinking_level: str | None = None,
 ) -> None:
     """
     Ask the model for subtitles, repairing and checking the answer before accepting it.
@@ -217,6 +220,7 @@ async def _generate_subtitles(
             system_instruction=system_instruction,
             text=text,
             with_audio=with_audio,
+            thinking_level=thinking_level,
         )
 
         if config.debug:

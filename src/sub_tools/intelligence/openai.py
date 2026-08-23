@@ -149,6 +149,7 @@ async def generate(
     system_instruction: str,
     text: Optional[str] = None,
     with_audio: bool = True,
+    thinking_level: str | None = None,
 ) -> Optional[str]:
     """
     Ask the model once for subtitles, retrying only transient failures.

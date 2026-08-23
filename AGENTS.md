@@ -87,8 +87,9 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 - `get_provider()` picks the provider module from the model name (`config.provider`)
 
 **intelligence/gemini.py** and **intelligence/openai.py**: Provider modules
-- Each exposes the same surface: `accepts_audio()`, `prepare_audio()`, `generate(system_instruction, text, with_audio)`, and `speak(text, language)` returning WAV bytes
+- Each exposes the same surface: `accepts_audio()`, `prepare_audio()`, `generate(system_instruction, text, with_audio, thinking_level)`, and `speak(text, language)` returning WAV bytes
 - Prompting and validation live in pipeline.py; the providers only talk to their API and retry transient failures
+- Gemini uses high thinking for transcription and low thinking for translation by default; the levels can be overridden with `--transcription-thinking-level` and `--translation-thinking-level`
 - Provider selection is by model name: `gpt-*` (and other OpenAI prefixes) → OpenAI with `OPENAI_API_KEY`, everything else → Gemini with `GEMINI_API_KEY`
 - OpenAI text models (gpt-5.6-*) cannot hear audio: transcription is routed to `whisper-1` on the transcription API, which answers in SRT (override with `--audio-model`; `gpt-audio-*` chat models are also accepted), while the selected model translates text-only; Gemini models hear audio natively
 - OpenAI audio is inlined as base64; files over 15 MB are re-encoded to mono 32 kbit/s MP3 first, which fits about an hour of speech under the 20 MB request cap. Gemini uploads the file once and caches the handle

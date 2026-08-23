@@ -81,6 +81,16 @@ The provider follows from the model name: `gpt-*` models call the OpenAI API wit
 `GEMINI_API_KEY` (or `--gemini-api-key`). The same repair and validation loop runs
 either way.
 
+Gemini uses `high` thinking for transcription by default because reasoning helps
+with audio segmentation and timestamp placement. Translation defaults to `low`
+thinking because it receives an existing subtitle structure and the repair and
+validation stages protect that structure. Override either setting when needed:
+
+```shell
+sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages es \
+  --transcription-thinking-level high --translation-thinking-level low
+```
+
 OpenAI text models such as `gpt-5.6-luna` cannot hear audio, so transcription is
 routed to an audio-capable model (`whisper-1` on the transcription API by default;
 override with `--audio-model`, which also accepts `gpt-audio-*` chat models) while

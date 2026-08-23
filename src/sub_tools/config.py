@@ -7,6 +7,8 @@ from typing import Any
 
 
 DEFAULT_MODEL = "gemini-3.7-flash"
+DEFAULT_TRANSCRIPTION_THINKING_LEVEL = "high"
+DEFAULT_TRANSLATION_THINKING_LEVEL = "low"
 
 # Prefixes that identify an OpenAI model name, e.g. gpt-5.6-luna.
 OPENAI_MODEL_PREFIXES = ("gpt", "chatgpt", "o1", "o3", "o4")
@@ -41,6 +43,10 @@ class Config:
 
     # Model / provider
     model: str = DEFAULT_MODEL
+    # Transcription needs deeper reasoning for audio segmentation and timing;
+    # translation is a more constrained task and is cheaper at LOW.
+    transcription_thinking_level: str = DEFAULT_TRANSCRIPTION_THINKING_LEVEL
+    translation_thinking_level: str = DEFAULT_TRANSLATION_THINKING_LEVEL
     gemini_api_key: str | None = None
     openai_api_key: str | None = None
     audio_model: str | None = None  # Provider default is used when unset
