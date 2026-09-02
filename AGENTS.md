@@ -28,7 +28,7 @@ uv run sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages
 # Only transcribe without translation
 uv run sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
-# Specify a custom Gemini model for transcription and translation (default: gemini-3.7-flash)
+# Specify a custom Gemini model for transcription and translation (default: gemini-3.8-flash)
 uv run sub-tools -i <url> --languages en --model gemini-3.6-flash
 
 # Use an OpenAI model explicitly (needs OPENAI_API_KEY)

@@ -200,7 +200,7 @@ models or pipeline stages:
 ```shell
 sub-tools-eval \
   --reference reference/en.srt \
-  --hypothesis gemini-3.7-flash=output/gemini-3.7-flash/en.srt \
+  --hypothesis gemini-3.8-flash=output/gemini-3.8-flash/en.srt \
   --hypothesis gemini-3.6-flash=output/gemini-3.6-flash/en.srt \
   --output evals/transcription.json \
   --markdown evals/transcription.md

@@ -9,7 +9,7 @@ from sub_tools.intelligence.gemini import _thinking_level
 
 class TestProviderInference:
     def test_gemini_models_use_gemini(self):
-        assert Config(model="gemini-3.7-flash").provider == "gemini"
+        assert Config(model="gemini-3.8-flash").provider == "gemini"
 
     def test_gpt_models_use_openai(self):
         assert Config(model="gpt-5.6-luna").provider == "openai"
@@ -85,7 +85,7 @@ class TestOpenAIAudioRouting:
 
 class TestApiKeySelection:
     def test_gemini_key_is_used_for_gemini_models(self):
-        config = Config(model="gemini-3.7-flash", gemini_api_key="g", openai_api_key="o")
+        config = Config(model="gemini-3.8-flash", gemini_api_key="g", openai_api_key="o")
         assert config.api_key == "g"
 
     def test_openai_key_is_used_for_openai_models(self):
