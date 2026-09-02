@@ -5,7 +5,7 @@ Configuration for sub-tools.
 from dataclasses import dataclass, field, fields
 from typing import Any
 
-DEFAULT_MODEL = "gemini-3.7-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 DEFAULT_TRANSCRIPTION_THINKING_LEVEL = "high"
 DEFAULT_TRANSLATION_THINKING_LEVEL = "low"
 

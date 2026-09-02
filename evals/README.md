@@ -34,7 +34,7 @@ Set the Gemini API key and choose a model, then run the four commands below:
 
 ~~~shell
 export GEMINI_API_KEY=...
-MODEL=gemini-3.7-flash
+MODEL=gemini-3.8-flash
 
 uv run python evals/corpus.py
 uv run python evals/run_subtools.py --model "$MODEL"
