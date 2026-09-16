@@ -13,7 +13,9 @@ ROOT = Path(__file__).parent
 
 FENCE = re.compile(r"^\s*\x60\x60\x60[a-zA-Z]*\s*\n|\n\s*\x60\x60\x60\s*$")
 CUE_LINE = re.compile(r"^(?P<start>[\d:,.]+)\s*-->\s*(?P<end>[\d:,.]+)(?P<rest>.*)$")
-TIME_PARTS = re.compile(r"^(\d{1,3})[:,.](\d{1,2})[:,.](\d{1,2})[:,.](\d{1,3})$|^(\d{1,2})[:,.](\d{1,2})[:,.](\d{1,3})$")
+TIME_PARTS = re.compile(
+    r"^(\d{1,3})[:,.](\d{1,2})[:,.](\d{1,2})[:,.](\d{1,3})$|^(\d{1,2})[:,.](\d{1,2})[:,.](\d{1,3})$"
+)
 
 
 def _timestamp(value: str) -> str | None:
@@ -59,8 +61,12 @@ def normalize(text: str) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Normalize one sub-tools model run before scoring.")
-    parser.add_argument("--model", required=True, help="Gemini model used to generate the subtitles.")
+    parser = argparse.ArgumentParser(
+        description="Normalize one sub-tools model run before scoring."
+    )
+    parser.add_argument(
+        "--model", required=True, help="Gemini model used to generate the subtitles."
+    )
     args = parser.parse_args()
 
     variant = model_variant(args.model)
@@ -97,9 +103,7 @@ def main() -> None:
     }
     report_path = ROOT / "normalization" / f"{variant}.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8"
-    )
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"{args.model}: repaired {len(repaired)}/{len(sources)}")
 
 

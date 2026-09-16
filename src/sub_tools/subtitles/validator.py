@@ -77,7 +77,9 @@ def parse_strict(content: str) -> tuple[list[Cue], list[str]]:
             continue
 
         if len(rows) < 3:
-            errors.append(f"block {position} has {len(rows)} line(s), expected an index, a timestamp and text")
+            errors.append(
+                f"block {position} has {len(rows)} line(s), expected an index, a timestamp and text"
+            )
             continue
 
         if not rows[0].strip().isdigit():
@@ -86,13 +88,17 @@ def parse_strict(content: str) -> tuple[list[Cue], list[str]]:
 
         match = CUE_LINE.match(rows[1].strip())
         if not match:
-            errors.append(f"block {position} has a malformed timestamp: {rows[1].strip()!r}")
+            errors.append(
+                f"block {position} has a malformed timestamp: {rows[1].strip()!r}"
+            )
             continue
 
         body = rows[2:]
         stray = [row for row in body if ARROW.search(row) or STAMP_LIKE.match(row)]
         if stray:
-            errors.append(f"block {position} has a timestamp where subtitle text belongs: {stray[0].strip()!r}")
+            errors.append(
+                f"block {position} has a timestamp where subtitle text belongs: {stray[0].strip()!r}"
+            )
             continue
 
         cues.append(
@@ -125,7 +131,9 @@ def find_problems(
         return errors, []
 
     if len(cues) < config.min_subtitles:
-        return [f"found {len(cues)} subtitles, expected at least {config.min_subtitles}"], []
+        return [
+            f"found {len(cues)} subtitles, expected at least {config.min_subtitles}"
+        ], []
 
     errors += _timing_errors(cues)
     errors += _range_errors(cues, duration)
@@ -173,11 +181,15 @@ def _range_errors(cues: list[Cue], duration: float | None) -> list[str]:
         return []
     beyond = [cue.index for cue in cues if cue.end > duration + 1]
     if beyond:
-        return [f"{len(beyond)} subtitle(s) end after the audio does, first at #{beyond[0]}"]
+        return [
+            f"{len(beyond)} subtitle(s) end after the audio does, first at #{beyond[0]}"
+        ]
     return []
 
 
-def _coverage_errors(cues: list[Cue], duration: float | None, config: Config) -> list[str]:
+def _coverage_errors(
+    cues: list[Cue], duration: float | None, config: Config
+) -> list[str]:
     """
     Subtitles must span the recording rather than trailing off partway through.
     """
@@ -199,7 +211,9 @@ def _coverage_errors(cues: list[Cue], duration: float | None, config: Config) ->
     return errors
 
 
-def _reference_errors(cues: list[Cue], reference: str | None, config: Config) -> list[str]:
+def _reference_errors(
+    cues: list[Cue], reference: str | None, config: Config
+) -> list[str]:
     """
     A translation must keep the timings it was given and lose almost nothing.
 
@@ -225,7 +239,9 @@ def _reference_errors(cues: list[Cue], reference: str | None, config: Config) ->
             f"more than the {allowed} allowed"
         ]
     if len(cues) > len(source):
-        return [f"translation has {len(cues) - len(source)} more subtitles than the source"]
+        return [
+            f"translation has {len(cues) - len(source)} more subtitles than the source"
+        ]
 
     if len(source) == len(cues):
         drifted = [
@@ -251,7 +267,9 @@ def _reference_warnings(cues: list[Cue], reference: str | None) -> list[str]:
     source, errors = parse_strict(reference)
     if errors or not source or len(cues) >= len(source):
         return []
-    return [f"translation is missing {len(source) - len(cues)} of {len(source)} subtitles"]
+    return [
+        f"translation is missing {len(source) - len(cues)} of {len(source)} subtitles"
+    ]
 
 
 def _warnings(cues: list[Cue], config: Config) -> list[str]:
@@ -259,7 +277,9 @@ def _warnings(cues: list[Cue], config: Config) -> list[str]:
     Report unusual but publishable timing.
     """
     warnings = []
-    long_cues = [c.index for c in cues if (c.end - c.start) * 1000 > config.max_valid_duration]
+    long_cues = [
+        c.index for c in cues if (c.end - c.start) * 1000 > config.max_valid_duration
+    ]
     if long_cues:
         warnings.append(
             f"{len(long_cues)} subtitle(s) run longer than "

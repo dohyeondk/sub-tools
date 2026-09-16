@@ -5,7 +5,9 @@ def _write_srt(path, cues):
     path.write_text("\n\n".join(cues) + "\n", encoding="utf-8")
 
 
-def test_authoritative_metrics_delegate_to_subtitle_edit_rate_for_nonparallel_srt(tmp_path):
+def test_authoritative_metrics_delegate_to_subtitle_edit_rate_for_nonparallel_srt(
+    tmp_path,
+):
     reference_path = tmp_path / "reference.srt"
     hypothesis_path = tmp_path / "hypothesis.srt"
     _write_srt(

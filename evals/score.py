@@ -52,7 +52,9 @@ def score_sample(sample: dict, model: str, variant: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Score one sub-tools model run.")
-    parser.add_argument("--model", required=True, help="Gemini model used to generate the subtitles.")
+    parser.add_argument(
+        "--model", required=True, help="Gemini model used to generate the subtitles."
+    )
     args = parser.parse_args()
 
     variant = model_variant(args.model)
@@ -93,9 +95,7 @@ def main() -> None:
     }
     result_path = ROOT / "results" / f"{variant}.json"
     result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(
-        json.dumps(result, indent=2) + "\n", encoding="utf-8"
-    )
+    result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
     header = "| model | " + " | ".join(label for _, label in METRICS) + " |"
     divider = "|---" + "|---:" * len(METRICS) + "|"

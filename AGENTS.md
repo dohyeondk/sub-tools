@@ -6,6 +6,20 @@ This file provides guidance to agents when working with code in this repository.
 
 sub-tools is a Python toolkit for converting video/audio content into accurate, multilingual subtitles using Google Gemini (default), Anthropic, OpenAI, or OpenRouter models for transcription and translation, plus text-to-speech dubbing of the results. Model output is repaired and strictly validated before it is accepted. The tool supports HLS streams, direct file URLs, and local files.
 
+## Agent loop
+
+```bash
+./setup.sh
+# If `uv` is not on PATH: source ~/.local/bin/env
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -m "not slow"
+uv run sub-tools --help
+```
+
+Copy `.env.example` and export a provider key before transcribe/translate/dub.
+From a source checkout, always invoke `uv run sub-tools` (or `.venv/bin/sub-tools`).
+
 ## Development Setup
 
 ```bash
@@ -14,6 +28,8 @@ git clone https://github.com/dohyeondk/sub-tools.git
 cd sub-tools
 ./setup.sh  # installs uv and runs uv sync
 ```
+
+If `uv` is not on `PATH` afterward, run `source ~/.local/bin/env`.
 
 ## Common Commands
 
@@ -45,11 +61,10 @@ uv run sub-tools --tasks transcribe translate dub --audio-file audio.mp3 --langu
 
 ### Testing
 ```bash
-# Run all tests
+uv run ruff check .
+uv run ruff format --check .
 uv run pytest -m "not slow"
-
-# Run with verbose output
-uv run pytest -v
+uv run pytest -v -m "not slow"
 ```
 
 ### Contributing

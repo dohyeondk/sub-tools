@@ -37,51 +37,58 @@ environment:
 ./setup.sh
 ```
 
+After `./setup.sh`, invoke the tool with `uv run sub-tools` (or `.venv/bin/sub-tools`).
+If `uv` is not on `PATH`, run `source ~/.local/bin/env` first. After `pip install
+sub-tools`, the `sub-tools` command is already on `PATH` and you can drop `uv run`.
+
 ### Usage
+
+Copy `.env.example` and export the provider key you need (the CLI reads the process
+environment; it does not load `.env` itself).
 
 ```shell
 export GEMINI_API_KEY={your_api_key}
 
 # Full pipeline: download video, extract audio, transcribe, and translate
-sub-tools -i https://example.com/video.mp4 --languages en es fr
+uv run sub-tools -i https://example.com/video.mp4 --languages en es fr
 
 # Using HLS stream URL
-sub-tools -i https://example.com/hls/video.m3u8 --languages en es fr
+uv run sub-tools -i https://example.com/hls/video.m3u8 --languages en es fr
 
 # Using local audio file (skip video/audio tasks)
-sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages en es fr
+uv run sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages en es fr
 
 # Only transcribe without translation
-sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
+uv run sub-tools --tasks transcribe --audio-file audio.mp3 --languages en
 
 # Dub existing subtitles only (uses the {language}.srt files already in the output directory)
-sub-tools --tasks dub --audio-file audio.mp3 --languages es fr
+uv run sub-tools --tasks dub --audio-file audio.mp3 --languages es fr
 
 # Specify custom tasks (available: video, audio, signature, transcribe, translate, dub)
-sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
+uv run sub-tools -i https://example.com/video.mp4 --tasks video audio transcribe translate --languages en es
 
 # Specify a custom Gemini model for transcription and translation
-sub-tools -i https://example.com/video.mp4 --languages en --model gemini-3.6-flash
+uv run sub-tools -i https://example.com/video.mp4 --languages en --model gemini-3.6-flash
 
 # Use an OpenAI model instead of Gemini (reads OPENAI_API_KEY)
 export OPENAI_API_KEY={your_api_key}
-sub-tools -i https://example.com/video.mp4 --languages en es --provider openai --model gpt-5.6-luna
+uv run sub-tools -i https://example.com/video.mp4 --languages en es --provider openai --model gpt-5.6-luna
 
 # Use an Anthropic model for text-only translation
 export ANTHROPIC_API_KEY={your_api_key}
-sub-tools --tasks translate --audio-file audio.mp3 --languages es --provider anthropic --model claude-sonnet-4-20250514
+uv run sub-tools --tasks translate --audio-file audio.mp3 --languages es --provider anthropic --model claude-sonnet-4-20250514
 
 # Use any OpenRouter model, including a separate audio model for transcription
 export OPENROUTER_API_KEY={your_api_key}
-sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages es \
+uv run sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages es \
   --provider openrouter --model anthropic/claude-sonnet-4 \
   --audio-model google/gemini-2.5-flash
 
 # Dub: speak the translated subtitles into es.mp3 and fr.mp3
-sub-tools --tasks transcribe translate dub --audio-file audio.mp3 --languages es fr
+uv run sub-tools --tasks transcribe translate dub --audio-file audio.mp3 --languages es fr
 
 # Specify output directory (default: output)
-sub-tools -i https://example.com/video.mp4 --languages en --output my-subtitles
+uv run sub-tools -i https://example.com/video.mp4 --languages en --output my-subtitles
 ```
 
 ### Choosing a provider
@@ -124,7 +131,7 @@ thinking because it receives an existing subtitle structure and the repair and
 validation stages protect that structure. Override either setting when needed:
 
 ```shell
-sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages es \
+uv run sub-tools --tasks transcribe translate --audio-file audio.mp3 --languages es \
   --transcription-thinking-level high --translation-thinking-level low
 ```
 
@@ -198,7 +205,7 @@ Give each hypothesis a stable name with `NAME=PATH`; repeat `--hypothesis` to co
 models or pipeline stages:
 
 ```shell
-sub-tools-eval \
+uv run sub-tools-eval \
   --reference reference/en.srt \
   --hypothesis gemini-3.8-flash=output/gemini-3.8-flash/en.srt \
   --hypothesis gemini-3.6-flash=output/gemini-3.6-flash/en.srt \
@@ -243,6 +250,8 @@ cd sub-tools
 ## 🧪 Testing
 
 ```shell
+uv run ruff check .
+uv run ruff format --check .
 uv run pytest -m "not slow"
 ```
 

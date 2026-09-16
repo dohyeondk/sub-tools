@@ -111,14 +111,18 @@ def _unwrap_json_envelope(text: str) -> tuple[str, bool]:
         return text, False
     if isinstance(data, dict):
         subtitle_fields = [
-            value for value in data.values() if isinstance(value, str) and "-->" in value
+            value
+            for value in data.values()
+            if isinstance(value, str) and "-->" in value
         ]
         if len(subtitle_fields) == 1:
             return subtitle_fields[0], True
     return text, False
 
 
-def _clamp_backwards_ends(cues: list[dict], duration: float | None) -> tuple[list[dict], int]:
+def _clamp_backwards_ends(
+    cues: list[dict], duration: float | None
+) -> tuple[list[dict], int]:
     """
     Give a cue whose end precedes its start the one end that cannot be wrong:
     the moment the next cue begins.
@@ -258,7 +262,10 @@ def _restore_from_reference(cues: list[dict], reference: str) -> tuple[list[dict
     if len(source) == len(cues):
         restored = 0
         for original, translated in zip(source, cues):
-            if (translated["start"], translated["end"]) != (original["start"], original["end"]):
+            if (translated["start"], translated["end"]) != (
+                original["start"],
+                original["end"],
+            ):
                 translated["start"] = original["start"]
                 translated["end"] = original["end"]
                 restored += 1
@@ -279,7 +286,10 @@ def _restore_from_reference(cues: list[dict], reference: str) -> tuple[list[dict
 
         if best and best[0] <= MATCH_TOLERANCE_SECONDS:
             original = source[best[1]]
-            if (translated["start"], translated["end"]) != (original["start"], original["end"]):
+            if (translated["start"], translated["end"]) != (
+                original["start"],
+                original["end"],
+            ):
                 translated["start"] = original["start"]
                 translated["end"] = original["end"]
                 restored += 1

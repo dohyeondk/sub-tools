@@ -37,5 +37,11 @@ jobs:
       - name: Install the project
         run: uv sync --frozen --all-extras --dev
 
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format
+        run: uv run ruff format --check .
+
       - name: Run tests
         run: uv run pytest -m "not slow"

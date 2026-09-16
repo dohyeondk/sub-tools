@@ -32,9 +32,15 @@ def _parser() -> argparse.ArgumentParser:
         metavar="NAME=PATH",
         help="Generated SRT to score. Repeat to compare variants; a bare path uses its stem as the name.",
     )
-    parser.add_argument("--language", default="en", help="BCP-47 source language tag (default: en).")
-    parser.add_argument("--output", type=Path, help="Write the machine-readable JSON report here.")
-    parser.add_argument("--markdown", type=Path, help="Write a human-readable Markdown report here.")
+    parser.add_argument(
+        "--language", default="en", help="BCP-47 source language tag (default: en)."
+    )
+    parser.add_argument(
+        "--output", type=Path, help="Write the machine-readable JSON report here."
+    )
+    parser.add_argument(
+        "--markdown", type=Path, help="Write a human-readable Markdown report here."
+    )
     return parser
 
 
@@ -84,7 +90,9 @@ def main() -> None:
                 {
                     "name": name,
                     "hypothesis": str(path),
-                    "metrics": authoritative_metrics(reference_path, path, args.language),
+                    "metrics": authoritative_metrics(
+                        reference_path, path, args.language
+                    ),
                 }
             )
         report = {

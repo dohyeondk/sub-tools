@@ -92,7 +92,10 @@ async def generate(
             _record_usage(response)
             return response.text
 
-        except (google_exceptions.ResourceExhausted, google_exceptions.ServiceUnavailable) as e:
+        except (
+            google_exceptions.ResourceExhausted,
+            google_exceptions.ServiceUnavailable,
+        ) as e:
             if attempt < config.retry - 1:
                 await asyncio.sleep(backoff(attempt))
                 continue

@@ -215,8 +215,16 @@ def _compress(path: str) -> str:
     fd, compressed = tempfile.mkstemp(suffix=".mp3")
     os.close(fd)
     cmd = [
-        "ffmpeg", "-y", "-i", path,
-        "-ac", "1", "-ar", str(COMPRESS_SAMPLE_RATE), "-b:a", COMPRESS_BITRATE,
+        "ffmpeg",
+        "-y",
+        "-i",
+        path,
+        "-ac",
+        "1",
+        "-ar",
+        str(COMPRESS_SAMPLE_RATE),
+        "-b:a",
+        COMPRESS_BITRATE,
         compressed,
     ]
     try:
@@ -292,9 +300,11 @@ def _record_usage(model: str, response_usage) -> None:
         return
     bucket = _bucket(model)
     bucket["requests"] += 1
-    bucket["input_tokens"] += getattr(response_usage, "prompt_tokens", 0) or getattr(
-        response_usage, "input_tokens", 0
-    ) or 0
+    bucket["input_tokens"] += (
+        getattr(response_usage, "prompt_tokens", 0)
+        or getattr(response_usage, "input_tokens", 0)
+        or 0
+    )
     bucket["output_tokens"] += (
         getattr(response_usage, "completion_tokens", 0)
         or getattr(response_usage, "output_tokens", 0)

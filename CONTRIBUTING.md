@@ -23,8 +23,12 @@ Thank you for your interest in contributing to sub-tools!
 
 3. **Set up development environment:**
    ```bash
-   uv sync
+   ./setup.sh
    ```
+
+   This installs `uv` if needed and runs `uv sync`. Afterward, use `uv run ...`
+   (or `.venv/bin/sub-tools`). If `uv` is not on `PATH`, run `source ~/.local/bin/env`.
+   FFmpeg is required for media tests; see [README.md](README.md).
 
 4. **Create a feature branch:**
    ```bash
@@ -43,7 +47,8 @@ Thank you for your interest in contributing to sub-tools!
    - Write clean, readable code following existing patterns
    - Add tests for new functionality
    - Update documentation if needed
-   - Run tests: `uv run pytest`
+   - Lint/format: `uv run ruff check .` and `uv run ruff format --check .`
+   - Run tests: `uv run pytest -m "not slow"`
 
 6. **Commit your changes:**
    ```bash

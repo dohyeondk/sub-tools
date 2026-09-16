@@ -167,7 +167,9 @@ class TestWarnings:
 
     def test_long_cue_warns_but_does_not_fail(self):
         content = "1\n00:00:00,000 --> 00:00:25,000\nA very long cue.\n"
-        errors, warnings = find_problems(content, config=Config(max_valid_duration=20_000))
+        errors, warnings = find_problems(
+            content, config=Config(max_valid_duration=20_000)
+        )
 
         assert errors == []
         assert any("longer than" in w for w in warnings)
@@ -177,7 +179,9 @@ class TestWarnings:
             "1\n00:00:01,000 --> 00:00:03,000\nBefore silence.\n\n"
             "2\n00:00:30,000 --> 00:00:32,000\nAfter silence.\n"
         )
-        errors, warnings = find_problems(content, config=Config(inter_item_gap_threshold=6_000))
+        errors, warnings = find_problems(
+            content, config=Config(inter_item_gap_threshold=6_000)
+        )
 
         assert errors == []
         assert any("gap" in w for w in warnings)
