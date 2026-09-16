@@ -131,7 +131,9 @@ async def _translate() -> None:
     tasks = []
 
     with Progress() as progress:
-        progress_task = progress.add_task("Translation", total=len(target_language_codes))
+        progress_task = progress.add_task(
+            "Translation", total=len(target_language_codes)
+        )
 
         # Prepare the audio once, before the concurrent tasks race to do it.
         # Text-only models translate without hearing the recording.
@@ -244,7 +246,9 @@ async def _generate_subtitles(
         )
 
         if config.debug:
-            with open(f"{output_file}.attempt{attempt + 1}.raw", "w", encoding="utf-8") as f:
+            with open(
+                f"{output_file}.attempt{attempt + 1}.raw", "w", encoding="utf-8"
+            ) as f:
                 f.write(content or "")
 
         if not content or "-->" not in content:
@@ -252,8 +256,12 @@ async def _generate_subtitles(
             _report_attempt(output_file, attempt, attempts, last_errors)
             continue
 
-        repaired, notes = repair_subtitles(content, duration=duration, reference=reference)
-        errors, warnings = find_problems(repaired, duration=duration, reference=reference)
+        repaired, notes = repair_subtitles(
+            content, duration=duration, reference=reference
+        )
+        errors, warnings = find_problems(
+            repaired, duration=duration, reference=reference
+        )
 
         if errors:
             last_errors = errors
@@ -275,12 +283,16 @@ async def _generate_subtitles(
     )
 
 
-def _report_attempt(output_file: str, attempt: int, attempts: int, errors: list[str]) -> None:
+def _report_attempt(
+    output_file: str, attempt: int, attempts: int, errors: list[str]
+) -> None:
     """
     Explain why an answer was rejected before asking again.
     """
     reason = "; ".join(errors)
     if attempt + 1 < attempts:
-        warning(f"{output_file}: attempt {attempt + 1}/{attempts} rejected ({reason}); retrying")
+        warning(
+            f"{output_file}: attempt {attempt + 1}/{attempts} rejected ({reason}); retrying"
+        )
     else:
         warning(f"{output_file}: attempt {attempt + 1}/{attempts} rejected ({reason})")

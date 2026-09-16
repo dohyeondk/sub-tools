@@ -17,7 +17,9 @@ class TestProviderInference:
     def test_case_is_ignored(self):
         assert Config(model="GPT-5.6-Luna").provider == "openai"
 
-    def test_thinking_defaults_keep_transcription_quality_and_reduce_translation_cost(self):
+    def test_thinking_defaults_keep_transcription_quality_and_reduce_translation_cost(
+        self,
+    ):
         config = Config()
         assert config.transcription_thinking_level == "high"
         assert config.translation_thinking_level == "low"
@@ -85,7 +87,9 @@ class TestOpenAIAudioRouting:
 
 class TestApiKeySelection:
     def test_gemini_key_is_used_for_gemini_models(self):
-        config = Config(model="gemini-3.8-flash", gemini_api_key="g", openai_api_key="o")
+        config = Config(
+            model="gemini-3.8-flash", gemini_api_key="g", openai_api_key="o"
+        )
         assert config.api_key == "g"
 
     def test_openai_key_is_used_for_openai_models(self):

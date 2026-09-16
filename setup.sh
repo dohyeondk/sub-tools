@@ -41,3 +41,13 @@ cd "$script_directory"
 
 echo "Using $uv_command"
 "$uv_command" sync
+
+echo "Setup complete. From this checkout, run: $uv_command run sub-tools --help"
+if ! command -v uv >/dev/null 2>&1; then
+    env_file="${HOME}/.local/bin/env"
+    if [[ -f "$env_file" ]]; then
+        echo "uv is not on PATH. In a new shell, run: source $env_file"
+    else
+        echo "uv is not on PATH. Add $(dirname "$uv_command") to PATH, then run: uv run sub-tools --help"
+    fi
+fi

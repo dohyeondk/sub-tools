@@ -51,9 +51,7 @@ def dub() -> None:
     Generate a dubbed MP3 for every requested language that has subtitles.
     """
     languages = [
-        language
-        for language in config.languages
-        if not should_skip(f"{language}.mp3")
+        language for language in config.languages if not should_skip(f"{language}.mp3")
     ]
 
     if not languages:
@@ -117,7 +115,9 @@ async def _dub_language(
             _fit_segment(wav, slot, tmpdir, index)
             for index, (wav, slot) in enumerate(zip(wavs, slots))
         ]
-        durations = [len(frames) / (SAMPLE_RATE * SAMPLE_WIDTH * CHANNELS) for frames in segments]
+        durations = [
+            len(frames) / (SAMPLE_RATE * SAMPLE_WIDTH * CHANNELS) for frames in segments
+        ]
         gaps, final_pad = plan_gaps(starts, durations, total_duration)
 
         track = io.BytesIO()
@@ -213,7 +213,9 @@ def atempo_filter(ratio: float) -> str | None:
     return ",".join(f"atempo={part:.5f}" for part in parts)
 
 
-def _fit_segment(wav_bytes: bytes, slot: float | None, tmpdir: str, index: int) -> bytes:
+def _fit_segment(
+    wav_bytes: bytes, slot: float | None, tmpdir: str, index: int
+) -> bytes:
     """
     Return the segment as canonical PCM frames, sped up to fit its slot.
     """
@@ -258,14 +260,23 @@ def _apply_filter(frames: bytes, filter_chain: str, tmpdir: str, index: int) -> 
         wav.writeframes(frames)
     with open(source, "wb") as f:
         f.write(buffer.getvalue())
-    return _run_ffmpeg_to_frames(["-i", source, "-filter:a", filter_chain], tmpdir, index)
+    return _run_ffmpeg_to_frames(
+        ["-i", source, "-filter:a", filter_chain], tmpdir, index
+    )
 
 
 def _run_ffmpeg_to_frames(input_args: list[str], tmpdir: str, index: int) -> bytes:
     output = os.path.join(tmpdir, f"norm_{index}.wav")
     cmd = [
-        "ffmpeg", "-y", *input_args,
-        "-ar", str(SAMPLE_RATE), "-ac", str(CHANNELS), "-c:a", "pcm_s16le",
+        "ffmpeg",
+        "-y",
+        *input_args,
+        "-ar",
+        str(SAMPLE_RATE),
+        "-ac",
+        str(CHANNELS),
+        "-c:a",
+        "pcm_s16le",
         output,
     ]
     try:

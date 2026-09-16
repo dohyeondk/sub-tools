@@ -140,15 +140,25 @@ def _compress(path: str) -> str:
     fd, compressed = tempfile.mkstemp(suffix=".mp3")
     os.close(fd)
     cmd = [
-        "ffmpeg", "-y", "-i", path,
-        "-ac", "1", "-ar", str(COMPRESS_SAMPLE_RATE), "-b:a", COMPRESS_BITRATE,
+        "ffmpeg",
+        "-y",
+        "-i",
+        path,
+        "-ac",
+        "1",
+        "-ar",
+        str(COMPRESS_SAMPLE_RATE),
+        "-b:a",
+        COMPRESS_BITRATE,
         compressed,
     ]
     try:
         subprocess.run(cmd, check=True, capture_output=True)
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         stderr = e.stderr.decode() if getattr(e, "stderr", None) else str(e)
-        raise RuntimeError(f"Failed to compress {path} for OpenAI audio input: {stderr}")
+        raise RuntimeError(
+            f"Failed to compress {path} for OpenAI audio input: {stderr}"
+        )
 
     info(
         f"Compressed {path} for OpenAI audio input: "
@@ -178,7 +188,10 @@ async def generate(
     if with_audio:
         data, audio_format = prepare_audio()
         content.append(
-            {"type": "input_audio", "input_audio": {"data": data, "format": audio_format}}
+            {
+                "type": "input_audio",
+                "input_audio": {"data": data, "format": audio_format},
+            }
         )
     if text:
         content.append({"type": "text", "text": text})
@@ -236,7 +249,9 @@ async def _transcribe_via_api(model: str) -> Optional[str]:
                 bucket = _bucket(model)
                 bucket["requests"] += 1
                 bucket["transcribe_seconds"] += audio_duration(config.audio_file) or 0
-                return result if isinstance(result, str) else getattr(result, "text", None)
+                return (
+                    result if isinstance(result, str) else getattr(result, "text", None)
+                )
 
             except (
                 openai.RateLimitError,

@@ -15,7 +15,9 @@ ROOT = Path(__file__).parent
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", required=True, help="Gemini model passed to sub-tools.")
+    parser.add_argument(
+        "--model", required=True, help="Gemini model passed to sub-tools."
+    )
     parser.add_argument(
         "--retry",
         type=int,
@@ -35,7 +37,9 @@ def main() -> None:
             print(f"skip {target}")
             continue
 
-        with tempfile.TemporaryDirectory(prefix=f"sub-tools-eval-{sample['name']}-") as workdir:
+        with tempfile.TemporaryDirectory(
+            prefix=f"sub-tools-eval-{sample['name']}-"
+        ) as workdir:
             command = [
                 "sub-tools",
                 "--tasks",
@@ -62,7 +66,9 @@ def main() -> None:
 
             produced = Path(workdir) / "en.srt"
             if not produced.exists():
-                raise SystemExit(f"sub-tools produced no subtitles for {sample['name']}")
+                raise SystemExit(
+                    f"sub-tools produced no subtitles for {sample['name']}"
+                )
             shutil.copyfile(produced, target)
 
         print(f"{sample['name']}: {target}", flush=True)

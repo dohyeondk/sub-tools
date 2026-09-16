@@ -116,7 +116,9 @@ class TestDownloadFromUrl:
 class TestVideoToAudio:
     """Integration tests for video_to_audio function."""
 
-    def test_skips_conversion_if_audio_exists_and_no_overwrite(self, tmp_path, video_url):
+    def test_skips_conversion_if_audio_exists_and_no_overwrite(
+        self, tmp_path, video_url
+    ):
         """Test that skips conversion if audio file exists and overwrite is False."""
         video_file = tmp_path / "test_video.mp4"
         audio_file = tmp_path / "existing_audio.mp3"
