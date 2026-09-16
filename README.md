@@ -148,6 +148,19 @@ The tool operates as a multi-stage pipeline controlled by the `--tasks` paramete
 
 By default, all tasks except `dub` run. You can customize which tasks to run with `--tasks`.
 
+### Speech-to-text models
+
+Most models are asked for SRT text directly. Dedicated speech-to-text models
+return timed words instead and reject system instructions, thinking, and tools,
+so they are called with a transcription config and their cues are assembled from
+the word timings. Gemini model names containing `transcribe` take this path, as
+do OpenRouter's speech-to-text models:
+
+```bash
+sub-tools --tasks transcribe --audio-file audio.mp3 --languages en \
+  --model gemini-3.5-transcribe
+```
+
 ### Dubbing
 
 Each subtitle cue is spoken by the selected provider's text-to-speech model (OpenAI:
